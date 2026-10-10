@@ -44,9 +44,9 @@ VidrierApp propone un modelo colaborativo de captación de demanda real mediante
 ## Equipo
 
 * **Leonardo Rodriguez** (LU 1048084) - https://github.com/leorod/
-  * **Rol Principal:** Arquitectura, Backend, Persistencia y Modelo de Datos.
+  * **Rol Principal:** Arquitectura, Backend, Persistencia, Modelo de Datos y Desarrollo.
 * **Facundo Reyes** (LU 1111386) - https://github.com/FacundoReyes
-  * **Rol Principal:** UX/UI y Flujo de Experiencia de Usuario.
+  * **Rol Principal:** UX/UI, Flujo de Experiencia de Usuario y Desarrollo.
 
 ---
 
