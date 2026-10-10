@@ -1,0 +1,47 @@
+---
+config:
+  layout: elk
+---
+flowchart TB
+ subgraph Capa_Presentacion["Capa de Presentación (UI &amp; State)"]
+        UI["Composables:<br> MapScreen / ShopDetailScreen / LogVisitScreen"]
+        UIState["UiState (Data Class immutable)<br> / Loading / Success / Error / Offline"]
+        VM["ViewModels:<br> ShopDetailViewModel<br> / VisitViewModel"]
+  end
+ subgraph Capa_Dominio["Capa de Dominio (Clean Architecture / Pure Kotlin)"]
+        UC1["GetShopDetailUseCase"]
+        UC2["LogVisitUseCase"]
+        ModelLocal["Modelos de Dominio<br> / Shop (Local), Vote (Voto), Category (Rubro), Visit (Visita)"]
+        IRepo["Interfaces de Repositorio<br> / ShopRepository<br> / VisitRepository"]
+  end
+ subgraph Capa_Datos["Capa de Datos (Data & Sources)"]
+        RepoImpl1["RetrofitShopRepository"]
+        RepoImpl2["RoomVisitRepository"]
+        Mapper["Mappers (DTO / Entity a Domain)"]
+        RemoteDS["Remote DataSource<br>(Retrofit Service)"]
+        LocalDS["Local DataSource<br>(Room DAO)"]
+  end
+ subgraph External["Fuentes Externas & Backend"]
+        API_Backend["Backend (API REST JSON)"]
+        Room_DB[("Base de Datos Local<br>(SQLite / Room)")]
+  end
+    VM -- "2. Invoca UseCase" --> UC1 & UC2
+    UC1 -- "3. Ejecuta regla de negocio y llama Abstracción" --> IRepo
+    UC2 -- "3. Ejecuta regla de negocio y llama Abstracción" --> IRepo
+    UC1 -. Usa .-> ModelLocal
+    UC2 -. Usa .-> ModelLocal
+    RepoImpl1 -. "4. Implementa interfaz" .-> IRepo
+    RepoImpl2 -. "4. Implementa interfaz" .-> IRepo
+    RepoImpl1 -- "5a. Solicita datos remotos (Locales/Votes)" --> RemoteDS
+    RepoImpl2 -- "5b. Persiste/Lee localmente (Visitas)" --> LocalDS
+    RemoteDS -- "6a. Devuelve ShopDto / VoteDto" --> Mapper
+    LocalDS -- "6b. Devuelve VisitEntity" --> Mapper
+    Mapper -- "7. Transforma a Modelo de Dominio" --> IRepo
+    RemoteDS <== HTTP/REST (Retrofit) ==> API_Backend
+    LocalDS <== Lectura / Escritura ==> Room_DB
+    UI L_UI_VM_0@-- "1. Captura eventos de usuario (User Intent)" --> VM
+    VM -- "8. Expone UiState vía StateFlow" --> UIState
+    UIState -- "9. Re-renderiza UI declarativa" --> UI
+
+
+    L_UI_VM_0@{ curve: linear }

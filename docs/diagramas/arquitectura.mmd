@@ -1,0 +1,59 @@
+graph TB
+    subgraph Dispositivo_Movil ["Dispositivo Móvil (Emprendedor)"]
+        subgraph App_Android ["VidrierApp (Android Nativo)"]
+            Android_UI["Jetpack Compose UI<br/>(Mapa, Detalle Local, Visitas)"]
+            Android_Engine["Motor MVVM / Clean Architecture"]
+            Room_Storage[("Room DB<br/>(Bitácora de Visitas / Fotos)")]
+        end
+        
+        subgraph Hardware_Sensors ["Sensores del Dispositivo"]
+            GPS["GPS / Servicios de Ubicación<br/>(Primer Plano)"]
+        end
+
+        Android_Engine <--> Room_Storage
+        Android_Engine --> GPS
+    end
+
+    subgraph Dispositivo_Vecino ["Dispositivo Móvil (Vecino)"]
+        subgraph Browser_Vecino ["Navegador Web<br/> (Desde QR escaneado)"]
+            Web_Browser["Formulario Web de Voto (Sin App)"]
+        end
+    end
+
+    subgraph Servicios_Externos ["Servicios de Terceros"]
+        Map_Provider["Proveedor de Mapas<br/>(Google Maps SDK / OpenStreetMap)"]
+    end
+
+    subgraph Servidor_Cloud ["Infraestructura Backend (Cloud Hosting)"]
+        API_Gateway["Backend API<br/>(Ktor / Spring Boot + Kotlin)"]
+        
+        subgraph Procesos_Internos ["Servicios Backend"]
+            Auth_Module["Gestor de Suscripciones<br/>(3 Días Gratis / Pase 30 Días)"]
+            Voto_Module["Agregador de Votos por Zona/Local"]
+            Normalizador_RT["Pipeline Normalización Inmediata<br/>(Sanitización, Alias y Fuzzy Matching)"]
+            Worker_Excepciones["Worker / Batch Nocturno de Excepciones<br/>(Clasificación de Textos 'Unclassified')"]
+        end
+
+        DB_Postgres[("PostgreSQL")]
+
+        API_Gateway --> Auth_Module
+        API_Gateway --> Voto_Module
+        API_Gateway --> Normalizador_RT
+        
+        Normalizador_RT -- "Texto no reconocido" --> Worker_Excepciones
+        
+        Auth_Module --> DB_Postgres
+        Voto_Module --> DB_Postgres
+        Normalizador_RT --> DB_Postgres
+        Worker_Excepciones --> DB_Postgres
+    end
+
+    %% Conexiones
+    Android_UI <--"Representación de Mapa"--> Map_Provider
+    Android_Engine <--"HTTPS / JSON (Retrofit API)"--> API_Gateway
+    Web_Browser <--"HTTPS / JSON"--> API_Gateway
+
+    style Dispositivo_Movil fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Dispositivo_Vecino fill:#fbe9e7,stroke:#d84315,stroke-width:2px
+    style Servicios_Externos fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    style Servidor_Cloud fill:#efebe9,stroke:#4e342e,stroke-width:2px

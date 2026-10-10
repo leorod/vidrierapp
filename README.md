@@ -4,10 +4,18 @@
 
 **VidrierApp** es una plataforma colaborativa y basada en datos diseñada para conectar la oferta inmobiliaria comercial con la demanda real de los barrios. Ayudamos a los emprendedores a decidir de forma inteligente dónde ubicar sus negocios, basándose en lo que los vecinos de la zona realmente necesitan.
 
-## Documento de Diseño y Análisis (Pre-entrega - Etapa 1)
+## Documentos 
+
+### Documento de Diseño y Análisis (Pre-entrega - Etapa 1)
 El análisis completo, los requisitos detallados, el alcance, las justificaciones tecnológicas y las decisiones arquitectónicas del proyecto se irán documentando en el siguiente link:
 
 **[(Google Docs) VidrierApp Pre-entrega](https://docs.google.com/document/d/1DLETnXIkVfcgO08Xo1XmYDy4gQZs8149/edit?usp=sharing&ouid=107418476718967049931&rtpof=true&sd=true)**
+
+### Diagramas y documentos auxiliares
+
+En [docs/](/docs/) se encuentra el código Mermaid de los diagramas + un ADR con las decisiones que se van tomando sobre la arquitectura. El ADR es un documento interno para usar como referencia a futuro a medida que avanzamos con el proyecto, el único documento *formal* es el Documento de Diseño.
+
+Todos los documentos en esta carpeta son documentos vivos que se irán manteniendo conforme avance el proyecto.
 
 ---
 
