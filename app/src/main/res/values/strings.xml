@@ -1,0 +1,84 @@
+<resources>
+    <string name="app_name">VidrierApp</string>
+    <string name="app_tagline">Abrí donde te esperan</string>
+
+    <!-- Navegación & Comunes -->
+    <string name="nav_map">Mapa</string>
+    <string name="nav_detail">Ficha del Local</string>
+    <string name="nav_log_visit">Bitácora de Visita</string>
+    <string name="action_back">Volver</string>
+    <string name="action_close">Cerrar</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_search">Buscar</string>
+
+    <!-- Mapa & Filtros (RF01, RF02, RNF-14) -->
+    <string name="map_search_placeholder">Buscar barrio o dirección (ej. Mataderos, Haedo)</string>
+    <string name="map_filter_all">Todos</string>
+    <string name="map_btn_my_location_desc">Centrar mapa en mi ubicación actual</string>
+    <string name="map_shops_found">%1$d locales en alquiler con demanda validada</string>
+    <string name="map_card_top_rubro">Rubro más pedido:</string>
+    <string name="map_card_total_votes">%1$d votos de vecinos</string>
+    <string name="map_card_view_detail">Ver ficha completa</string>
+    <string name="map_location_permission_denied">Permiso de GPS no otorgado. Podés buscar tu barrio manualmente.</string>
+    <string name="map_no_shops_found">No se encontraron locales para el filtro seleccionado.</string>
+
+    <!-- Detalle del Local (RF03, RNF-06) -->
+    <string name="detail_title">Ficha Técnica del Inmueble</string>
+    <string name="detail_section_demand">Demanda Barrial Validada (Vecinos)</string>
+    <string name="detail_section_property">Características del Local</string>
+    <string name="detail_section_frequency">Frecuencia Estimada de Compra</string>
+    <string name="detail_section_contact">Contacto Inmobiliaria</string>
+    <string name="detail_votes_breakdown">Desglose de Votos por Rubro</string>
+    <string name="detail_votes_count">%1$d votos (%2$.1f%%)</string>
+    <string name="detail_surface">Superficie: %1$d m²</string>
+    <string name="detail_price">Alquiler mensual: %1$s</string>
+    <string name="detail_contact_agency">Inmobiliaria: %1$s</string>
+    <string name="detail_btn_call">Llamar</string>
+    <string name="detail_btn_call_desc">Llamar a la inmobiliaria por teléfono</string>
+    <string name="detail_btn_whatsapp">WhatsApp</string>
+    <string name="detail_btn_whatsapp_desc">Abrir conversación de WhatsApp con la inmobiliaria</string>
+    <string name="detail_btn_email">Email</string>
+    <string name="detail_btn_email_desc">Enviar correo electrónico a la inmobiliaria</string>
+    <string name="detail_btn_log_visit">Registrar Visita Técnica</string>
+    <string name="detail_btn_log_visit_desc">Iniciar relevamiento técnico y bitácora de visita para este local</string>
+
+    <!-- Bloqueo y Pases (RNF-06, RNF-07) -->
+    <string name="pass_trial_active">Período de prueba activo: %1$d días restantes</string>
+    <string name="pass_active">Pase de 30 días activo</string>
+    <string name="pass_locked_title">Métricas Cuantitativas Bloqueadas</string>
+    <string name="pass_locked_description">Para acceder al volumen exacto de votos, porcentajes y frecuencias de conversión, activá tu pase comercial de 30 días o iniciá tu prueba gratuita.</string>
+    <string name="pass_btn_activate">Activar Pase de 30 días</string>
+    <string name="pass_btn_start_trial">Iniciar Prueba Gratuita (3 días)</string>
+
+    <!-- Bitácora de Visitas (RF04, RNF-08) -->
+    <string name="visit_title">Bitácora de Relevamiento Técnico</string>
+    <string name="visit_shop_target">Local: %1$s</string>
+    <string name="visit_notes_label">Notas de campo y observaciones</string>
+    <string name="visit_notes_hint">Anotá el estado de la vereda, iluminación, locales linderos, etc.</string>
+    <string name="visit_pedestrian_label">Conteo de peatones en vereda</string>
+    <string name="visit_pedestrian_count">%1$d peatones registrados</string>
+    <string name="visit_pedestrian_increment_desc">Sumar un peatón al conteo</string>
+    <string name="visit_pedestrian_decrement_desc">Restar un peatón al conteo</string>
+    <string name="visit_photos_label">Fotografías del local y vidriera</string>
+    <string name="visit_btn_take_photo">Capturar Fotografía</string>
+    <string name="visit_btn_take_photo_desc">Abrir la cámara para fotografiar la vidriera del local</string>
+    <string name="visit_photos_count">%1$d fotografías adjuntas</string>
+    <string name="visit_privacy_notice">Privacidad: Todas las notas y fotografías se guardan localmente en tu teléfono (Room DB) y nunca se envían al servidor.</string>
+    <string name="visit_btn_submit">Guardar Visita en Dispositivo</string>
+    <string name="visit_save_success">Visita técnica registrada con éxito en tu bitácora local.</string>
+    <string name="visit_list_title">Visitas Registradas a este Local</string>
+    <string name="visit_no_entries">Aún no registraste visitas técnicas para este local.</string>
+
+    <!-- Estados de Error, Carga y Offline (RNF-12) -->
+    <string name="status_loading">Cargando información de demanda...</string>
+    <string name="status_offline_banner">Modo sin conexión. Mostrando datos almacenados en el dispositivo.</string>
+    <string name="status_error_title">No se pudo cargar la información</string>
+    <string name="status_error_message">Ocurrió un error al contactar al servidor. Los datos ingresados están guardados.</string>
+
+    <!-- Frecuencias de consumo -->
+    <string name="freq_diaria">Diaria</string>
+    <string name="freq_semanal">Semanal</string>
+    <string name="freq_mensual">Mensual</string>
+    <string name="freq_ocasional">Ocasional</string>
+</resources>
