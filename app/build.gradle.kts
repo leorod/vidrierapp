@@ -14,6 +14,7 @@ android {
     targetSdk = 37
     versionCode = 1
     versionName = "1.0"
+    manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") as String? ?: "YOUR_MAPS_API_KEY"
   }
 
   buildTypes {
@@ -95,4 +96,10 @@ dependencies {
   implementation(libs.okhttp)
   implementation(libs.okhttp.logging)
   implementation(libs.kotlinx.serialization.json)
+
+  // Hardware, Maps & Image Loading
+  implementation(libs.coil.compose)
+  implementation(libs.play.services.location)
+  implementation(libs.play.services.maps)
+  implementation(libs.maps.compose)
 }
