@@ -89,6 +89,50 @@
 * **Decisión:** Implementar la base de datos SQLite/Room en el dispositivo móvil para la gestión de la bitácora de visitas (notas, fotografías capturadas con CameraX, conteos peatonales) y la **caché local de locales consultados con TTL de 7 días** (DATA-01). Asimismo, almacenar localmente identificadores de dispositivo (Device ID / UUID) para la validación de la prueba gratuita de 3 días (DET-03).
 * **Motivación:** Garantizar la operatividad en zonas con cobertura de red deficiente, permitir el acceso offline a fichas previamente consultadas y asegurar la privacidad del usuario comerciante (RNF-PRI-01).
 
+### 4.3. Geolocalización de Locales: Alta por Administrador con Pin Manual Acotado y Validado
+
+* **Decisión:** El alta de locales es una operación exclusivamente administrativa. La dirección se resuelve con servicios de Google para **ubicar la zona**, pero la coordenada que se persiste es **la que el administrador marca manualmente** sobre un mapa acotado, validada por el backend contra la dirección ingresada.
+
+**Flujo de alta:**
+
+1. **Búsqueda de dirección (cliente):** el administrador escribe la dirección en un buscador con autocompletado (Places SDK, variante por sesión, con token de sesión). El autocompletado se resuelve en el cliente para evitar latencia por tecla.
+2. **Resolución de zona (backend Ktor):** al elegir una sugerencia, la app envía el `place_id` al backend (`POST /admin/geo/resolve`). El backend lo geocodifica contra el Geocoding API y devuelve **solo** un punto central y un recuadro (*bounding box*) de ~150 m alrededor. La clave de API vive únicamente en el servidor, restringida por IP.
+3. **Mapa acotado (cliente):** la app muestra el mapa con la cámara limitada a ese recuadro y un zoom mínimo, para que el administrador ubique el local con precisión. No se muestra ningún pin preexistente.
+4. **Ubicación manual:** el administrador **toca el mapa** en el punto exacto. Aceptar o confirmar la sugerencia sin tocar el mapa no está permitido: sin toque no se habilita el botón de guardar.
+5. **Vista previa:** antes de guardar, la app muestra el pin sobre el mapa junto con la dirección ingresada.
+6. **Validación (backend):** al recibir `POST /admin/shops`, el backend calcula la distancia entre el punto enviado y el punto resuelto en el paso 2 (recuperado de una caché en memoria de 15 minutos, para no volver a geocodificar):
+   * **≤ 150 m:** se acepta.
+   * **> 150 m:** se rechaza salvo que la solicitud incluya una confirmación explícita (`confirm_far_location = true`), en cuyo caso se guarda marcando `location_override_used = true`.
+7. **Persistencia:** se guarda el registro en PostgreSQL (ver modelo abajo). El punto resuelto por Google **no se persiste**.
+8. **Visualización:** los clientes (Android y Web Lite) reciben las coordenadas desde la API propia, que las lee de PostGIS. Mostrar un local no genera ninguna llamada a Google; el mapa se renderiza con el Maps SDK for Android (`maps-compose`).
+
+**Salida de emergencia:** si Google ubica mal la dirección (numeración irregular, altura inexistente), el administrador puede activar "La ubicación sugerida es incorrecta", que libera el mapa. El alta queda marcada con `location_override_used = true` para su revisión posterior.
+
+**Modelo de datos (tabla `shops`, campos relevantes):**
+
+| Campo | Descripción |
+|---|---|
+| `id` | UUID propio. Clave primaria del local. |
+| `address_text` | Dirección ingresada, como texto. |
+| `place_id` | Identificador de Google. Opcional, no único. |
+| `location` | `geography(Point, 4326)` en PostGIS, con el punto elegido por el administrador. |
+| `location_override_used` | Booleano. `true` si se usó la salida de emergencia o se confirmó una ubicación lejana. |
+| `created_by`, `created_at` | Auditoría de alta. |
+| `updated_by`, `updated_at` | Auditoría de modificaciones. |
+
+* **Reglas derivadas:**
+  * El `place_id` **no identifica al local**: varios locales pueden compartir dirección y, por lo tanto, `place_id`. La clave primaria es el UUID propio.
+  * El `place_id` puede almacenarse sin límite de tiempo, pero no contiene coordenadas. No se usa para renderizar el mapa.
+  * Las coordenadas devueltas por el Geocoding API se usan **solo en memoria del servidor y de forma transitoria** (centrado del mapa y validación). Nunca se escriben en la base de datos.
+  * Reportes de ubicación incorrecta enviados desde la app llegan al administrador, que corrige el punto y deja trazabilidad en `updated_by` / `updated_at`.
+
+* **Motivación:**
+  * **Costo desacoplado del uso:** el Maps SDK for Android tiene uso móvil ilimitado sin cargo. Las únicas llamadas facturables ocurren en el alta (una de Geocoding por local, más el autocompletado). El gasto escala con los locales cargados, no con la cantidad de usuarios. Ambos servicios son SKUs Essentials con 10.000 solicitudes gratuitas por mes cada uno, volumen que el alta manual no se acerca a consumir.
+  * **Cumplimiento de términos:** los Service Specific Terms de Google Maps Platform limitan el cacheo de lat/lng del Geocoding API a 30 días corridos, mientras que los valores de ID (`place_id`) pueden guardarse. Persistir solo coordenadas elegidas manualmente evita almacenar contenido de Google fuera de lo permitido.
+  * **Precisión:** el geocoding puede ubicar una dirección en el medio de la manzana o con altura aproximada. Quien conoce el local lo ubica con más exactitud. Es además un patrón de UX establecido ("elegí el punto exacto en el mapa").
+  * **Integridad de datos:** como el punto depende de una persona, el backend lo verifica contra la dirección, el mapa acotado previene el error de interfaz, y la auditoría permite rastrear y corregir.
+  * **Consultas geoespaciales:** al ser datos propios en PostGIS, las búsquedas por radio y mapas de calor (4.1) no dependen
+
 ---
 
 ## 5. Alternativas Evaluadas y Descartadas
@@ -104,3 +148,15 @@
 ### ❌ Alternativa Descartada 3: Aplicación Web Progresiva (PWA) Unificada para Ambos Perfiles
 
 * **Razón del descarte:** Una PWA no proporciona el nivel de integración necesario con el hardware del dispositivo (gestión eficiente de cámara para bitácora, almacenamiento seguro en base de datos local y rendimiento fluido en renderizado de mapas interactivos) que requiere el usuario emprendedor en sus jornadas de trabajo de campo.
+
+### ❌ Alternativa Descartada 4: Guardar solo el `place_id` y resolverlo en cada visualización
+
+* **Razón del descarte:** Cada apertura del mapa generaría una llamada facturable por local mostrado, haciendo que el costo escale con los usuarios activos en lugar de con los locales cargados. Además, acopla la disponibilidad de la app a un servicio externo.
+
+### ❌ Alternativa Descartada 5: Persistir las coordenadas del Geocoding API como dato definitivo
+
+* **Razón del descarte:** Los términos de Google limitan el almacenamiento de lat/lng obtenidos por geocoding a 30 días corridos. Hacerlos definitivos sin confirmación del usuario nos expondría a incumplir las condiciones de uso.
+
+### ❌ Alternativa Descartada 6: OpenStreetMap (MapLibre / osmdroid) como proveedor de mapas
+
+* **Razón del descarte:** Los servidores públicos de teselas de OSM no están pensados para aplicaciones comerciales en producción y Nominatim tiene límites estrictos de peticiones. Contratar un proveedor de teselas agregaría un costo que con el Maps SDK for Android es cero, y las librerías de Compose para MapLibre son menos maduras que `maps-compose`. Se reevaluará si Google modifica sus condiciones comerciales, como ya ocurrió con la eliminación del crédito mensual de US$200 en marzo de 2025.
