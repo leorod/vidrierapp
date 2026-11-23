@@ -14,5 +14,9 @@ data class ShopDto(
     val topCategoryName: String? = null,
     val totalVotes: Int = 0,
     val votes: List<VoteDto> = emptyList(),
-    val contactAgency: String = ""
+    val contactAgency: String = "",
+    val lastVoteDate: String? = null,
+    val dailyFrequencyCount: Int? = null,
+    val morningTimeSlotPercentage: Int? = null,
+    val status: String? = null
 )

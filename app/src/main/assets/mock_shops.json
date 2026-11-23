@@ -1,0 +1,134 @@
+[
+  {
+    "id": "shop-mataderos-01",
+    "address": "Av. Juan Bautista Alberdi 6420",
+    "neighborhood": "Mataderos",
+    "latitude": -34.6525,
+    "longitude": -58.5020,
+    "surfaceAreaM2": 75,
+    "rentalPrice": "$850,000 / mes",
+    "topCategoryName": "Cafetería",
+    "totalVotes": 58,
+    "votes": [
+      {
+        "categoryId": "cat-cafeteria",
+        "categoryName": "Cafetería",
+        "voteCount": 34,
+        "percentage": 58.6
+      },
+      {
+        "categoryId": "cat-verdulería",
+        "categoryName": "Verdulería",
+        "voteCount": 15,
+        "percentage": 25.9
+      },
+      {
+        "categoryId": "cat-panadería",
+        "categoryName": "Panadería",
+        "voteCount": 9,
+        "percentage": 15.5
+      }
+    ],
+    "contactAgency": "Inmobiliaria Mataderos Prop.",
+    "lastVoteDate": "Hace 2 días",
+    "dailyFrequencyCount": 21,
+    "morningTimeSlotPercentage": 65,
+    "status": "SUFFICIENT"
+  },
+  {
+    "id": "shop-haedo-01",
+    "address": "Av. Rivadavia 16200",
+    "neighborhood": "Haedo",
+    "latitude": -34.6432,
+    "longitude": -58.6085,
+    "surfaceAreaM2": 45,
+    "rentalPrice": "$520,000 / mes",
+    "topCategoryName": "Kiosco",
+    "totalVotes": 6,
+    "votes": [
+      {
+        "categoryId": "cat-kiosco",
+        "categoryName": "Kiosco",
+        "voteCount": 3,
+        "percentage": 50.0
+      },
+      {
+        "categoryId": "cat-librería",
+        "categoryName": "Librería",
+        "voteCount": 2,
+        "percentage": 33.3
+      },
+      {
+        "categoryId": "cat-regalería",
+        "categoryName": "Regalería",
+        "voteCount": 1,
+        "percentage": 16.7
+      }
+    ],
+    "contactAgency": "Haedo Negocios Inmobiliarios",
+    "lastVoteDate": "Hace 5 días",
+    "dailyFrequencyCount": 2,
+    "morningTimeSlotPercentage": 40,
+    "status": "COLLECTING"
+  },
+  {
+    "id": "shop-mataderos-02",
+    "address": "Av. Directorio 5400",
+    "neighborhood": "Mataderos",
+    "latitude": -34.6480,
+    "longitude": -58.4950,
+    "surfaceAreaM2": 90,
+    "rentalPrice": "$1,100,000 / mes",
+    "topCategoryName": "Verdulería",
+    "totalVotes": 24,
+    "votes": [
+      {
+        "categoryId": "cat-verdulería",
+        "categoryName": "Verdulería",
+        "voteCount": 14,
+        "percentage": 58.3
+      },
+      {
+        "categoryId": "cat-carnicería",
+        "categoryName": "Carnicería",
+        "voteCount": 10,
+        "percentage": 41.7
+      }
+    ],
+    "contactAgency": "Mataderos Brokers",
+    "lastVoteDate": "Hace 1 día",
+    "dailyFrequencyCount": 16,
+    "morningTimeSlotPercentage": 70,
+    "status": "SUFFICIENT"
+  },
+  {
+    "id": "shop-haedo-02",
+    "address": "Estrada 400",
+    "neighborhood": "Haedo",
+    "latitude": -34.6400,
+    "longitude": -58.6010,
+    "surfaceAreaM2": 60,
+    "rentalPrice": "$650,000 / mes",
+    "topCategoryName": "Almacén",
+    "totalVotes": 11,
+    "votes": [
+      {
+        "categoryId": "cat-almacén",
+        "categoryName": "Almacén",
+        "voteCount": 7,
+        "percentage": 63.6
+      },
+      {
+        "categoryId": "cat-kiosco",
+        "categoryName": "Kiosco",
+        "voteCount": 4,
+        "percentage": 36.4
+      }
+    ],
+    "contactAgency": "Haedo Propiedades",
+    "lastVoteDate": "Hace 3 días",
+    "dailyFrequencyCount": 5,
+    "morningTimeSlotPercentage": 50,
+    "status": "COLLECTING"
+  }
+]
