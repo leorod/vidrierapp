@@ -2,6 +2,8 @@
 .gradle/
 build/
 
+docs/.obsidian/**
+
 # Local configuration file (sdk path, etc)
 local.properties
 
