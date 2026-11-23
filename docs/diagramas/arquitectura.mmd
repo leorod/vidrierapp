@@ -3,7 +3,7 @@ graph TB
         subgraph App_Android ["VidrierApp (Android Nativo)"]
             Android_UI["Jetpack Compose UI<br/>(Mapa, Detalle Local, Visitas)"]
             Android_Engine["Motor MVVM / Clean Architecture"]
-            Room_Storage[("Room DB<br/>(Bitácora de Visitas / Fotos)")]
+            Room_Storage[("Room DB<br/>(Visitas, Fotos y Caché TTL 7d)")]
         end
         
         subgraph Hardware_Sensors ["Sensores del Dispositivo"]
