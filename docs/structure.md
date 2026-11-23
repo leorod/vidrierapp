@@ -42,9 +42,11 @@ app/src/main/kotlin/com/vidrierapp/
 │   │   ├── database/
 │   │   │   └── VidrierAppDatabase.kt         # Room Database
 │   │   ├── dao/
-│   │   │   └── VisitDao.kt                   # Room DAO for offline-first visit log (RNF-08)
+│   │   │   ├── VisitDao.kt                   # Room DAO for offline-first visit log (RNF-08)
+│   │   │   └── CachedLocalDao.kt             # Room DAO for offline shop cache (TTL 7 days)
 │   │   └── entity/
-│   │       └── VisitEntity.kt                # Room entity for local persistence
+│   │       ├── VisitEntity.kt                # Room entity for local persistence
+│   │       └── CachedLocalEntity.kt          # Room entity for cached shop details
 │   ├── mapper/
 │   │   ├── ShopMapper.kt                     # DTO <-> Domain mappers
 │   │   └── VisitMapper.kt                    # Entity <-> Domain mappers

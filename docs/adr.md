@@ -86,8 +86,8 @@
 
 ### 4.2. Persistencia Local Offline-First para Trabajo de Campo
 
-* **Decisión:** Implementar la base de datos SQLite/Room en el dispositivo móvil para la gestión de la bitácora de visitas (notas, fotografías capturadas con CameraX y conteos peatonales).
-* **Motivación:** Garantizar la operatividad en zonas con cobertura de red deficiente y asegurar la privacidad del usuario comerciante, manteniendo sus anotaciones estratégicas almacenadas exclusivamente en su dispositivo (RNF-PRI-01).
+* **Decisión:** Implementar la base de datos SQLite/Room en el dispositivo móvil para la gestión de la bitácora de visitas (notas, fotografías capturadas con CameraX, conteos peatonales) y la **caché local de locales consultados con TTL de 7 días** (DATA-01). Asimismo, almacenar localmente identificadores de dispositivo (Device ID / UUID) para la validación de la prueba gratuita de 3 días (DET-03).
+* **Motivación:** Garantizar la operatividad en zonas con cobertura de red deficiente, permitir el acceso offline a fichas previamente consultadas y asegurar la privacidad del usuario comerciante (RNF-PRI-01).
 
 ---
 
