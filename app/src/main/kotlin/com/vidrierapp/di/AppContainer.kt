@@ -3,6 +3,7 @@ package com.vidrierapp.di
 import android.content.Context
 import androidx.room.Room
 import com.vidrierapp.data.local.database.VidrierAppDatabase
+import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
 import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
@@ -21,6 +22,9 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 class AppContainer(private val context: Context) {
 
+    // Flag de debug activable para el motor de mocking local
+    private val isMockModeEnabled: Boolean = true
+
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
@@ -28,6 +32,11 @@ class AppContainer(private val context: Context) {
 
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .apply {
+                if (isMockModeEnabled) {
+                    addInterceptor(MockInterceptor(context, json))
+                }
+            }
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })

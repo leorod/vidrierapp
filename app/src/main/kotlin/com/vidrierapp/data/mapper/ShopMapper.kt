@@ -18,7 +18,11 @@ fun ShopDto.toDomain(): Shop {
         topCategory = topCategoryName?.let { Category(id = it, name = it) },
         totalVotes = totalVotes,
         voteBreakdown = votes.map { it.toDomain() },
-        contactAgency = contactAgency
+        contactAgency = contactAgency,
+        lastVoteDate = lastVoteDate,
+        dailyFrequencyCount = dailyFrequencyCount,
+        morningTimeSlotPercentage = morningTimeSlotPercentage,
+        status = status
     )
 }
 

@@ -11,5 +11,9 @@ data class Shop(
     val topCategory: Category?,
     val totalVotes: Int = 0,
     val voteBreakdown: List<Vote> = emptyList(),
-    val contactAgency: String = ""
+    val contactAgency: String = "",
+    val lastVoteDate: String? = null,
+    val dailyFrequencyCount: Int? = null,
+    val morningTimeSlotPercentage: Int? = null,
+    val status: String? = null
 )
