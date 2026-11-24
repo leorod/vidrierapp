@@ -56,6 +56,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.vidrierapp.R
+import com.vidrierapp.presentation.common.ErrorState
 import com.vidrierapp.domain.location.Neighborhood
 import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.GeoPoint
@@ -118,24 +119,11 @@ fun MapScreen(
             )
         }
 
-        is MapUiState.Error -> CenteredMessage(modifier) {
-            Text(
-                text = stringResource(R.string.status_error_title),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(R.string.status_error_message),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            Button(
-                onClick = viewModel::retry,
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) {
-                Text(text = stringResource(R.string.action_retry))
-            }
-        }
+        is MapUiState.Error -> ErrorState(
+            isOffline = state.isOffline,
+            onRetry = viewModel::retry,
+            modifier = modifier
+        )
 
         is MapUiState.Success -> ShopsMap(
             shops = state.shops,

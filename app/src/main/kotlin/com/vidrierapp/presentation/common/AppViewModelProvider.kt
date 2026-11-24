@@ -14,14 +14,15 @@ import com.vidrierapp.presentation.visit.VisitViewModel
 
 object AppViewModelProvider {
     val Factory = viewModelFactory {
-        initializer { MapViewModel(container().getShopsUseCase, container().locationProvider) }
+        initializer { MapViewModel(container().getShopsUseCase, container().locationProvider, container().getCachedShopsUseCase, container().networkMonitor) }
         initializer { ShopDetailViewModel(
                 getShopDetailUseCase = container().getShopDetailUseCase,
                 observePassAccessUseCase = container().observePassAccessUseCase,
                 startTrialUseCase = container().startTrialUseCase,
                 purchasePassUseCase = container().purchasePassUseCase,
                 reportRentedUseCase = container().reportRentedUseCase,
-                observeReportedShopsUseCase = container().observeReportedShopsUseCase
+                observeReportedShopsUseCase = container().observeReportedShopsUseCase,
+                networkMonitor = container().networkMonitor
             ) }
         initializer {
             VisitViewModel(
@@ -31,6 +32,7 @@ object AppViewModelProvider {
                 photoStorage = container().photoStorage
             )
         }
+        initializer { NetworkStatusViewModel(container().networkMonitor) }
         initializer { MyVisitsHubViewModel(container().getAllVisitsUseCase, container().getCachedShopsUseCase, container().clock) }
     }
 }

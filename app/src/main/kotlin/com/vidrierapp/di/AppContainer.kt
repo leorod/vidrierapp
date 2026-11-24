@@ -1,12 +1,14 @@
 package com.vidrierapp.di
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.room.Room
 import com.vidrierapp.data.local.database.MIGRATION_1_2
 import com.vidrierapp.data.local.database.MIGRATION_2_3
 import com.vidrierapp.data.local.database.MIGRATION_3_4
 import com.vidrierapp.data.local.database.VidrierAppDatabase
 import com.vidrierapp.data.location.FusedLocationProvider
+import com.vidrierapp.data.network.ConnectivityNetworkMonitor
 import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
 import com.vidrierapp.data.storage.FilePhotoStorage
@@ -15,6 +17,7 @@ import com.vidrierapp.data.repository.RoomVisitRepository
 import com.vidrierapp.data.repository.SharedPreferencesPassRepository
 import com.vidrierapp.data.repository.SharedPreferencesReportedShopsRepository
 import com.vidrierapp.domain.location.LocationProvider
+import com.vidrierapp.domain.network.NetworkMonitor
 import com.vidrierapp.domain.repository.CachedShopRepository
 import com.vidrierapp.domain.repository.PassRepository
 import com.vidrierapp.domain.repository.ReportedShopsRepository
@@ -35,6 +38,8 @@ import com.vidrierapp.domain.usecase.StartTrialUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -59,11 +64,27 @@ class AppContainer(private val context: Context) {
         }
     }
 
+    private val connectivityNetworkMonitor: ConnectivityNetworkMonitor by lazy {
+        ConnectivityNetworkMonitor(
+            context.applicationContext.getSystemService(ConnectivityManager::class.java)
+        )
+    }
+
+    val networkMonitor: NetworkMonitor get() = connectivityNetworkMonitor
+
+    private val onlineState by lazy {
+        networkMonitor.isOnline.stateIn(
+            CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            SharingStarted.Eagerly,
+            connectivityNetworkMonitor.currentlyOnline()
+        )
+    }
+
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .apply {
                 if (isMockModeEnabled) {
-                    addInterceptor(MockInterceptor(context, json))
+                    addInterceptor(MockInterceptor(context, json) { onlineState.value })
                 }
             }
             .addInterceptor(HttpLoggingInterceptor().apply {

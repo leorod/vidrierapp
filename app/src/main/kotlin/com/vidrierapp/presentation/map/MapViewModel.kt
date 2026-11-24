@@ -8,16 +8,21 @@ import com.vidrierapp.domain.location.NeighborhoodCatalog
 import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.Shop
+import com.vidrierapp.domain.network.NetworkMonitor
+import com.vidrierapp.domain.usecase.GetCachedShopsUseCase
 import com.vidrierapp.domain.usecase.GetShopsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MapViewModel(
     private val getShopsUseCase: GetShopsUseCase,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val getCachedShopsUseCase: GetCachedShopsUseCase,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MapUiState>(MapUiState.Loading)
@@ -55,10 +60,27 @@ class MapViewModel(
                         )
                     },
                     onFailure = { error ->
-                        _uiState.value = MapUiState.Error(error.message ?: "Unknown error")
+                        showCachedOrError(error, categoryFilter)
                     }
                 )
             }
+        }
+    }
+
+    private suspend fun showCachedOrError(error: Throwable, categoryFilter: String?) {
+        val cached = getCachedShopsUseCase().first().map { it.shop }
+        if (cached.isNotEmpty()) {
+            allShops = cached
+            _uiState.value = MapUiState.Success(
+                shops = applyFilter(cached, categoryFilter),
+                categories = deriveCategories(cached),
+                selectedCategoryFilter = categoryFilter
+            )
+        } else {
+            _uiState.value = MapUiState.Error(
+                message = error.message ?: "Unknown error",
+                isOffline = !networkMonitor.isOnline.first()
+            )
         }
     }
 

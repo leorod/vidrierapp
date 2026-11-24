@@ -1,6 +1,16 @@
 package com.vidrierapp.presentation.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vidrierapp.presentation.common.AppViewModelProvider
+import com.vidrierapp.presentation.common.NetworkStatusViewModel
+import com.vidrierapp.presentation.common.OfflineBannerSlot
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -42,6 +52,9 @@ private val topLevelTabs = listOf(
 fun AppNavigation(modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(MapDestination as NavKey)
     val currentDestination = backStack.lastOrNull()
+    val networkStatusViewModel: NetworkStatusViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val isOffline by networkStatusViewModel.isOffline.collectAsState()
+    val showBanner = isOffline && currentDestination != VisitsHubDestination
     val showBottomBar = topLevelTabs.any { it.destination == currentDestination }
 
     Scaffold(
@@ -59,10 +72,27 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             }
         }
     ) { innerPadding ->
-        NavDisplay(
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
+                .consumeWindowInsets(innerPadding)
+        ) {
+        OfflineBannerSlot(
+            visible = showBanner,
+            onVisitsClick = {
+                backStack.clear()
+                backStack.add(VisitsHubDestination)
+            },
+            modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (showBanner) Modifier.consumeWindowInsets(WindowInsets.statusBars) else Modifier
+                )
+        ) {
+        NavDisplay(
             backStack = backStack,
             onBack = { backStack.removeLastOrNull() },
             entryDecorators = listOf(
@@ -104,6 +134,8 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 }
             }
         )
+        }
+        }
     }
 }
 

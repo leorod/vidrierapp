@@ -9,7 +9,7 @@ sealed interface ShopDetailUiState {
         val hasActivePass: Boolean = false,
         val trialAvailable: Boolean = true
     ) : ShopDetailUiState
-    data class Error(val message: String) : ShopDetailUiState
+    data class Error(val message: String, val isOffline: Boolean = false) : ShopDetailUiState
 }
 
 data class ReportRentedUiState(

@@ -3,6 +3,7 @@ package com.vidrierapp.data.remote.api
 import android.content.Context
 import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
 import com.vidrierapp.data.remote.dto.ShopDto
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
@@ -16,10 +17,11 @@ const val MOCK_REPORT_THRESHOLD = 3
 class MockInterceptor(
     private val json: Json,
     private val readShopsJson: () -> String,
-    private val reportThreshold: Int = MOCK_REPORT_THRESHOLD
+    private val reportThreshold: Int = MOCK_REPORT_THRESHOLD,
+    private val isOnline: () -> Boolean = { true }
 ) : Interceptor {
 
-    constructor(context: Context, json: Json) : this(
+    constructor(context: Context, json: Json, isOnline: () -> Boolean) : this(
         json = json,
         readShopsJson = {
             try {
@@ -27,13 +29,15 @@ class MockInterceptor(
             } catch (e: Exception) {
                 "[]"
             }
-        }
+        },
+        isOnline = isOnline
     )
 
     private val reportCounts = ConcurrentHashMap<String, Int>()
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
+        if (!isOnline()) throw IOException("Sin conexión")
         val url = request.url
         val pathSegments = url.encodedPathSegments
 
