@@ -74,8 +74,12 @@
     <string name="pass_active">Pase de 30 días activo</string>
     <string name="pass_locked_title">Métricas Cuantitativas Bloqueadas</string>
     <string name="pass_locked_description">Para acceder al volumen exacto de votos, porcentajes y frecuencias de conversión, activá tu pase comercial de 30 días o iniciá tu prueba gratuita.</string>
-    <string name="pass_btn_activate">Activar Pase de 30 días</string>
-    <string name="pass_btn_start_trial">Iniciar Prueba Gratuita (3 días)</string>
+    <string name="pass_btn_activate">Activar Pase de 30 días (simulado)</string>
+    <string name="pass_btn_start_trial">Iniciar Prueba Gratuita de 3 días (simulada)</string>
+    <string name="pass_btn_start_trial_desc">Iniciar la prueba gratuita simulada de 3 días para ver las métricas</string>
+    <string name="pass_btn_activate_desc">Simular la compra del pase de 30 días para ver las métricas</string>
+    <string name="pass_locked_icon_desc">Candado: métricas bloqueadas</string>
+    <string name="pass_simulation_notice">Simulación: no se realiza ningún cobro real.</string>
 
     <!-- Bitácora de Visitas (RF04, RNF-08) -->
     <string name="visit_title">Bitácora de Relevamiento Técnico</string>
