@@ -18,6 +18,12 @@ class RoomVisitRepository(
         }
     }
 
+    override fun getAllVisits(): Flow<List<Visit>> {
+        return visitDao.getAllVisits().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     override suspend fun saveVisit(visit: Visit): Result<Unit> {
         return try {
             visitDao.insertVisit(visit.toEntity())

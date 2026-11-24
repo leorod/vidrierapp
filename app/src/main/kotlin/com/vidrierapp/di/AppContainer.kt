@@ -9,6 +9,7 @@ import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.repository.VisitRepository
+import com.vidrierapp.domain.usecase.GetAllVisitsUseCase
 import com.vidrierapp.domain.usecase.GetShopDetailUseCase
 import com.vidrierapp.domain.usecase.GetShopsUseCase
 import com.vidrierapp.domain.usecase.GetVisitsUseCase
@@ -81,6 +82,10 @@ class AppContainer(private val context: Context) {
 
     val logVisitUseCase: LogVisitUseCase by lazy {
         LogVisitUseCase(visitRepository)
+    }
+
+    val getAllVisitsUseCase: GetAllVisitsUseCase by lazy {
+        GetAllVisitsUseCase(visitRepository)
     }
 
     val getVisitsUseCase: GetVisitsUseCase by lazy {
