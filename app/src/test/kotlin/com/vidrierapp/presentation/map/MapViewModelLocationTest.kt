@@ -1,5 +1,8 @@
 package com.vidrierapp.presentation.map
 
+import com.vidrierapp.domain.network.FakeNetworkMonitor
+import com.vidrierapp.domain.usecase.FakeCachedShopRepository
+import com.vidrierapp.domain.usecase.GetCachedShopsUseCase
 import com.vidrierapp.domain.location.NeighborhoodCatalog
 import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.Shop
@@ -49,7 +52,7 @@ class MapViewModelLocationTest {
     }
 
     private fun viewModel(provider: FakeLocationProvider) =
-        MapViewModel(GetShopsUseCase(EmptyShopRepository), provider)
+        MapViewModel(GetShopsUseCase(EmptyShopRepository), provider, GetCachedShopsUseCase(FakeCachedShopRepository()), FakeNetworkMonitor())
 
     @Test
     fun `starts with unknown permission and no fallback`() {
