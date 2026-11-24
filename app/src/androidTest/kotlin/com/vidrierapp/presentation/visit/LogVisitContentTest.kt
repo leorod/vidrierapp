@@ -1,6 +1,14 @@
 package com.vidrierapp.presentation.visit
 
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -25,7 +33,9 @@ class LogVisitContentTest {
         state: VisitUiState,
         onNotes: (String) -> Unit = {},
         onAddress: (String) -> Unit = {},
-        onSave: () -> Unit = {}
+        onSave: () -> Unit = {},
+        onIncrement: () -> Unit = {},
+        onDecrement: () -> Unit = {}
     ) {
         composeTestRule.setContent {
             VidrierAppTheme {
@@ -34,6 +44,8 @@ class LogVisitContentTest {
                     onBackClick = {},
                     onNotesChange = onNotes,
                     onAddressChange = onAddress,
+                    onIncrementPedestrians = onIncrement,
+                    onDecrementPedestrians = onDecrement,
                     onSaveClick = onSave
                 )
             }
@@ -77,5 +89,59 @@ class LogVisitContentTest {
 
         assertEquals("hola", notes)
         assertEquals(1, saves)
+    }
+
+    @Test
+    fun incrementButtonInvokesCallbackAndIsLargeEnough() {
+        var increments = 0
+        setContent(VisitUiState(shopId = "shop-1"), onIncrement = { increments++ })
+        val node = composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.visit_pedestrian_increment_desc))
+
+        node.assertWidthIsAtLeast(64.dp).assertHeightIsAtLeast(64.dp)
+        node.performClick()
+        node.performClick()
+
+        assertEquals(2, increments)
+    }
+
+    @Test
+    fun decrementButtonInvokesCallbackAndKeepsMinimumTouchTarget() {
+        var decrements = 0
+        setContent(VisitUiState(shopId = "shop-1"), onDecrement = { decrements++ })
+        val node = composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.visit_pedestrian_decrement_desc))
+
+        node.assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        node.performClick()
+
+        assertEquals(1, decrements)
+    }
+
+    @Test
+    fun counterContentDescriptionAnnouncesUpdatedTotal() {
+        var state by mutableStateOf(VisitUiState(shopId = "shop-1", pedestrianCount = 1))
+        composeTestRule.setContent {
+            VidrierAppTheme {
+                LogVisitContent(
+                    uiState = state,
+                    onBackClick = {},
+                    onNotesChange = {},
+                    onAddressChange = {},
+                    onIncrementPedestrians = { state = state.copy(pedestrianCount = state.pedestrianCount + 1) },
+                    onDecrementPedestrians = {},
+                    onSaveClick = {}
+                )
+            }
+        }
+        val one = context.resources.getQuantityString(R.plurals.visit_pedestrian_total_desc, 1, 1)
+        val two = context.resources.getQuantityString(R.plurals.visit_pedestrian_total_desc, 2, 2)
+
+        composeTestRule.onNodeWithContentDescription(one).assertContentDescriptionEquals(one)
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.visit_pedestrian_increment_desc))
+            .performClick()
+
+        composeTestRule.onNodeWithContentDescription(two).assertContentDescriptionEquals(two)
     }
 }

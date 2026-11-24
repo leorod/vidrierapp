@@ -150,6 +150,93 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun `increment adds one and stores the count in the saved state handle`() {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(handle = handle)
+
+        viewModel.incrementPedestrians()
+        viewModel.incrementPedestrians()
+
+        assertEquals(2, viewModel.uiState.value.pedestrianCount)
+        assertEquals(2, handle.get<Int>("draft_pedestrian_count"))
+    }
+
+    @Test
+    fun `decrement subtracts one`() {
+        val viewModel = createViewModel()
+        repeat(3) { viewModel.incrementPedestrians() }
+
+        viewModel.decrementPedestrians()
+
+        assertEquals(2, viewModel.uiState.value.pedestrianCount)
+    }
+
+    @Test
+    fun `decrement never goes below zero`() {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(handle = handle)
+
+        viewModel.decrementPedestrians()
+        viewModel.decrementPedestrians()
+
+        assertEquals(0, viewModel.uiState.value.pedestrianCount)
+        assertEquals(0, handle.get<Int>("draft_pedestrian_count"))
+    }
+
+    @Test
+    fun `pedestrian count is restored from the saved state handle`() {
+        val handle = SavedStateHandle()
+        createViewModel(handle = handle).apply {
+            incrementPedestrians()
+            incrementPedestrians()
+            incrementPedestrians()
+        }
+
+        val restored = createViewModel(handle = handle)
+
+        assertEquals(3, restored.uiState.value.pedestrianCount)
+    }
+
+    @Test
+    fun `save persists the pedestrian count`() {
+        val repository = FakeVisitRepository()
+        val viewModel = createViewModel(repository)
+        viewModel.initForShop("shop-1")
+        repeat(5) { viewModel.incrementPedestrians() }
+
+        viewModel.saveVisit()
+
+        assertEquals(5, repository.saved.single().pedestrianCount)
+    }
+
+    @Test
+    fun `save success clears the pedestrian draft`() {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(handle = handle)
+        viewModel.initForShop("shop-1")
+        viewModel.incrementPedestrians()
+
+        viewModel.saveVisit()
+
+        assertNull(handle.get<Int>("draft_pedestrian_count"))
+        assertEquals(0, createViewModel(handle = handle).uiState.value.pedestrianCount)
+    }
+
+    @Test
+    fun `save failure keeps the pedestrian draft`() {
+        val handle = SavedStateHandle()
+        val repository = FakeVisitRepository(saveResult = Result.failure(IllegalStateException("db")))
+        val viewModel = createViewModel(repository, handle)
+        viewModel.initForShop("shop-1")
+        viewModel.incrementPedestrians()
+
+        viewModel.saveVisit()
+
+        assertEquals(1, viewModel.uiState.value.pedestrianCount)
+        assertEquals(1, handle.get<Int>("draft_pedestrian_count"))
+    }
+
+    @Test
     fun `save success clears the draft`() {
         val handle = SavedStateHandle()
         val viewModel = createViewModel(handle = handle)
