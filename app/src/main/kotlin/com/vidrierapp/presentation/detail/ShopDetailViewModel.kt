@@ -6,7 +6,15 @@ import com.vidrierapp.domain.usecase.GetShopDetailUseCase
 import com.vidrierapp.domain.usecase.ObservePassAccessUseCase
 import com.vidrierapp.domain.usecase.PurchasePassUseCase
 import com.vidrierapp.domain.usecase.StartTrialUseCase
+import com.vidrierapp.domain.usecase.AlreadyReportedException
+import com.vidrierapp.domain.usecase.ObserveReportedShopsUseCase
+import com.vidrierapp.domain.usecase.ReportRentedUseCase
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +25,9 @@ class ShopDetailViewModel(
     private val getShopDetailUseCase: GetShopDetailUseCase,
     private val observePassAccessUseCase: ObservePassAccessUseCase,
     private val startTrialUseCase: StartTrialUseCase,
-    private val purchasePassUseCase: PurchasePassUseCase
+    private val purchasePassUseCase: PurchasePassUseCase,
+    private val reportRentedUseCase: ReportRentedUseCase,
+    observeReportedShopsUseCase: ObserveReportedShopsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ShopDetailUiState>(ShopDetailUiState.Loading)
@@ -25,6 +35,55 @@ class ShopDetailViewModel(
 
     private var loadJob: Job? = null
     private var currentShopId: String? = null
+
+    private val shopIdFlow = MutableStateFlow<String?>(null)
+    private val dialogVisible = MutableStateFlow(false)
+    private val submitting = MutableStateFlow(false)
+
+    val reportState: StateFlow<ReportRentedUiState> = combine(
+        shopIdFlow,
+        dialogVisible,
+        submitting,
+        observeReportedShopsUseCase()
+    ) { id, visible, isSubmitting, reported ->
+        ReportRentedUiState(
+            isDialogVisible = visible,
+            isSubmitting = isSubmitting,
+            alreadyReported = id != null && id in reported
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, ReportRentedUiState())
+
+    private val feedbackChannel = Channel<ReportRentedFeedback>(Channel.BUFFERED)
+    val feedback: Flow<ReportRentedFeedback> = feedbackChannel.receiveAsFlow()
+
+    fun onReportRentedClick() {
+        if (reportState.value.alreadyReported) {
+            feedbackChannel.trySend(ReportRentedFeedback.AlreadyReported)
+        } else {
+            dialogVisible.value = true
+        }
+    }
+
+    fun dismissReportDialog() {
+        dialogVisible.value = false
+    }
+
+    fun confirmReportRented() {
+        val id = currentShopId ?: return
+        if (submitting.value) return
+        dialogVisible.value = false
+        submitting.value = true
+        viewModelScope.launch {
+            val result = reportRentedUseCase(id)
+            submitting.value = false
+            val event = when {
+                result.isSuccess -> ReportRentedFeedback.Success
+                result.exceptionOrNull() is AlreadyReportedException -> ReportRentedFeedback.AlreadyReported
+                else -> ReportRentedFeedback.Failure
+            }
+            feedbackChannel.send(event)
+        }
+    }
 
     fun retry() {
         currentShopId?.let { loadShop(it) }
@@ -40,6 +99,7 @@ class ShopDetailViewModel(
 
     fun loadShop(shopId: String) {
         currentShopId = shopId
+        shopIdFlow.value = shopId
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _uiState.value = ShopDetailUiState.Loading

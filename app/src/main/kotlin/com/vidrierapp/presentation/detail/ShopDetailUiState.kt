@@ -11,3 +11,15 @@ sealed interface ShopDetailUiState {
     ) : ShopDetailUiState
     data class Error(val message: String) : ShopDetailUiState
 }
+
+data class ReportRentedUiState(
+    val isDialogVisible: Boolean = false,
+    val isSubmitting: Boolean = false,
+    val alreadyReported: Boolean = false
+)
+
+enum class ReportRentedFeedback {
+    Success,
+    Failure,
+    AlreadyReported
+}

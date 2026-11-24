@@ -1,7 +1,9 @@
 package com.vidrierapp.data.remote.api
 
+import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
 import com.vidrierapp.data.remote.dto.ShopDto
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -15,4 +17,9 @@ interface VidrierAppApiService {
     suspend fun getShopDetail(
         @Path("id") id: String
     ): ShopDto
+
+    @POST("api/v1/shops/{id}/report-rented")
+    suspend fun reportRented(
+        @Path("id") id: String
+    ): ReportRentedResponseDto
 }

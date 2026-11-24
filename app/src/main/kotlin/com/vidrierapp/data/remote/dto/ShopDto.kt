@@ -22,5 +22,6 @@ data class ShopDto(
     val frequencyCounts: Map<String, Int> = emptyMap(),
     val votesByWeekday: Map<String, Int> = emptyMap(),
     val votesByTimeSlot: Map<String, Int> = emptyMap(),
-    val status: String? = null
+    val status: String? = null,
+    val listingStatus: String = "ACTIVE"
 )

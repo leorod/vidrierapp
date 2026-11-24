@@ -12,6 +12,7 @@
     <string name="action_close">Cerrar</string>
     <string name="action_save">Guardar</string>
     <string name="action_retry">Reintentar</string>
+    <string name="action_cancel">Cancelar</string>
     <string name="action_search">Buscar</string>
 
     <!-- Mapa & Filtros (RF01, RF02, RNF-14) -->
@@ -61,6 +62,15 @@
     <string name="detail_btn_log_visit">Registrar Visita Técnica</string>
     <string name="detail_btn_log_visit_desc">Iniciar relevamiento técnico y bitácora de visita para este local</string>
     <string name="detail_btn_report_rented">Reportar local alquilado</string>
+    <string name="detail_btn_report_rented_desc">Reportar que este local ya fue alquilado</string>
+    <string name="detail_btn_report_rented_done">Ya reportaste este local</string>
+    <string name="detail_btn_report_rented_done_desc">Ya reportaste este local como alquilado desde este dispositivo</string>
+    <string name="report_rented_dialog_title">¿Reportar local alquilado?</string>
+    <string name="report_rented_dialog_message">Vamos a avisar que este local ya no está disponible. Solo podés reportarlo una vez desde este dispositivo.</string>
+    <string name="report_rented_dialog_confirm">Reportar</string>
+    <string name="report_rented_success">Gracias, recibimos tu reporte del local alquilado</string>
+    <string name="report_rented_error">No se pudo enviar el reporte</string>
+    <string name="report_rented_already">Ya reportaste este local</string>
     <string name="detail_sample_votes">%1$d votos acumulados</string>
     <string name="detail_sample_last_vote">Último voto %1$s</string>
     <string name="detail_sample_active_since">Activo desde %1$s</string>

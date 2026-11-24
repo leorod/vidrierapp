@@ -5,6 +5,7 @@ import com.vidrierapp.data.remote.dto.VoteDto
 import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.ConsumptionFrequency
 import com.vidrierapp.domain.model.Shop
+import com.vidrierapp.domain.model.ShopStatus
 import com.vidrierapp.domain.model.TimeSlot
 import com.vidrierapp.domain.model.Vote
 import com.vidrierapp.domain.model.Weekday
@@ -29,7 +30,8 @@ fun ShopDto.toDomain(): Shop {
         frequencyCounts = frequencyCounts.toEnumMap<ConsumptionFrequency>(),
         votesByWeekday = votesByWeekday.toEnumMap<Weekday>(),
         votesByTimeSlot = votesByTimeSlot.toEnumMap<TimeSlot>(),
-        status = status
+        status = status,
+        listingStatus = ShopStatus.fromRaw(listingStatus)
     )
 }
 

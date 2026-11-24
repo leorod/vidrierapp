@@ -19,7 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +51,6 @@ fun ShopDetailScreen(
     onBackClick: () -> Unit,
     onLogVisitClick: (shopId: String) -> Unit,
     modifier: Modifier = Modifier,
-    onReportRentedClick: () -> Unit = {},
     viewModel: ShopDetailViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,15 +69,25 @@ fun ShopDetailScreen(
         }
     }
 
+    val reportState by viewModel.reportState.collectAsState()
+    ReportRentedFeedbackEffect(
+        feedback = viewModel.feedback,
+        snackbarHostState = snackbarHostState,
+        onRetry = viewModel::confirmReportRented
+    )
+
     ShopDetailContent(
         uiState = uiState,
+        reportState = reportState,
         snackbarHostState = snackbarHostState,
         onCallClick = launch,
         onWhatsAppClick = launch,
         onEmailClick = launch,
         onBackClick = onBackClick,
         onLogVisitClick = onLogVisitClick,
-        onReportRentedClick = onReportRentedClick,
+        onReportRentedClick = viewModel::onReportRentedClick,
+        onReportConfirm = viewModel::confirmReportRented,
+        onReportDismiss = viewModel::dismissReportDialog,
         onRetry = viewModel::retry,
         onStartTrialClick = viewModel::startTrial,
         onPurchasePassClick = viewModel::purchasePass,
@@ -98,11 +106,17 @@ fun ShopDetailContent(
     onStartTrialClick: () -> Unit,
     onPurchasePassClick: () -> Unit,
     modifier: Modifier = Modifier,
+    reportState: ReportRentedUiState = ReportRentedUiState(),
+    onReportConfirm: () -> Unit = {},
+    onReportDismiss: () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onCallClick: (ContactIntentData?) -> Unit = {},
     onWhatsAppClick: (ContactIntentData?) -> Unit = {},
     onEmailClick: (ContactIntentData?) -> Unit = {}
 ) {
+    if (reportState.isDialogVisible) {
+        ReportRentedDialog(onConfirm = onReportConfirm, onDismiss = onReportDismiss)
+    }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -159,6 +173,7 @@ fun ShopDetailContent(
                 onStartTrialClick = onStartTrialClick,
                 onPurchasePassClick = onPurchasePassClick,
                 onLogVisitClick = onLogVisitClick,
+                reportState = reportState,
                 onReportRentedClick = onReportRentedClick,
                 onCallClick = onCallClick,
                 onWhatsAppClick = onWhatsAppClick,
@@ -197,6 +212,7 @@ private fun ShopDetailBody(
     onStartTrialClick: () -> Unit,
     onPurchasePassClick: () -> Unit,
     onLogVisitClick: (shopId: String) -> Unit,
+    reportState: ReportRentedUiState,
     onReportRentedClick: () -> Unit,
     onCallClick: (ContactIntentData?) -> Unit,
     onWhatsAppClick: (ContactIntentData?) -> Unit,
@@ -245,13 +261,11 @@ private fun ShopDetailBody(
         ) {
             Text(text = stringResource(R.string.detail_btn_log_visit))
         }
-        TextButton(
+        ReportRentedButton(
+            alreadyReported = reportState.alreadyReported,
+            isSubmitting = reportState.isSubmitting,
             onClick = onReportRentedClick,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .heightIn(min = MIN_TOUCH_TARGET)
-        ) {
-            Text(text = stringResource(R.string.detail_btn_report_rented))
-        }
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
     }
 }
