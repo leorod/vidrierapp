@@ -2,6 +2,9 @@ package com.vidrierapp.presentation.visit
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -11,11 +14,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,7 +30,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +68,8 @@ fun LogVisitScreen(
         onBackClick = onBackClick,
         onNotesChange = viewModel::updateNotes,
         onAddressChange = viewModel::updateManualAddress,
+        onIncrementPedestrians = viewModel::incrementPedestrians,
+        onDecrementPedestrians = viewModel::decrementPedestrians,
         onSaveClick = viewModel::saveVisit,
         modifier = modifier
     )
@@ -64,9 +82,17 @@ fun LogVisitContent(
     onBackClick: () -> Unit,
     onNotesChange: (String) -> Unit,
     onAddressChange: (String) -> Unit,
+    onIncrementPedestrians: () -> Unit,
+    onDecrementPedestrians: () -> Unit,
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalHapticFeedback.current
+    val totalDescription = pluralStringResource(
+        R.plurals.visit_pedestrian_total_desc,
+        uiState.pedestrianCount,
+        uiState.pedestrianCount
+    )
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -114,6 +140,56 @@ fun LogVisitContent(
                     text = stringResource(R.string.visit_shop_target, uiState.shopId),
                     style = MaterialTheme.typography.titleMedium
                 )
+            }
+            Text(
+                text = stringResource(R.string.visit_pedestrian_label),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onDecrementPedestrians()
+                    },
+                    modifier = Modifier.size(48.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Remove,
+                        contentDescription = stringResource(R.string.visit_pedestrian_decrement_desc)
+                    )
+                }
+                Text(
+                    text = uiState.pedestrianCount.toString(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription = totalDescription
+                            liveRegion = LiveRegionMode.Polite
+                        },
+                    style = MaterialTheme.typography.displayLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                Button(
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onIncrementPedestrians()
+                    },
+                    modifier = Modifier.size(88.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.visit_pedestrian_increment_desc),
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
             OutlinedTextField(
                 value = uiState.notes,

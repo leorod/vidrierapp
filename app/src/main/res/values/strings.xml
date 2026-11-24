@@ -93,9 +93,16 @@
     <string name="visit_notes_label">Notas de campo y observaciones</string>
     <string name="visit_notes_hint">Anotá el estado de la vereda, iluminación, locales linderos, etc.</string>
     <string name="visit_pedestrian_label">Conteo de peatones en vereda</string>
-    <string name="visit_pedestrian_count">%1$d peatones registrados</string>
+    <plurals name="visit_pedestrian_count">
+        <item quantity="one">%1$d peatón registrado</item>
+        <item quantity="other">%1$d peatones registrados</item>
+    </plurals>
     <string name="visit_pedestrian_increment_desc">Sumar un peatón al conteo</string>
     <string name="visit_pedestrian_decrement_desc">Restar un peatón al conteo</string>
+    <plurals name="visit_pedestrian_total_desc">
+        <item quantity="one">Total: %1$d peatón contado</item>
+        <item quantity="other">Total: %1$d peatones contados</item>
+    </plurals>
     <string name="visit_photos_label">Fotografías del local y vidriera</string>
     <string name="visit_btn_take_photo">Capturar Fotografía</string>
     <string name="visit_btn_take_photo_desc">Abrir la cámara para fotografiar la vidriera del local</string>
