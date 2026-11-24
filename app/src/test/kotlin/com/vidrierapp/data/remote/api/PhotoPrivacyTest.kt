@@ -29,7 +29,10 @@ class PhotoPrivacyTest {
             }
             method.annotations.forEach { annotation ->
                 val name = annotation.annotationClass.simpleName
-                assertFalse("${method.name} is $name", name in setOf("POST", "PUT", "PATCH", "Multipart"))
+                val forbidden = setOf("POST", "PUT", "PATCH", "Multipart")
+                val allowed = method.name == "reportRented" &&
+                    method.parameterTypes.all { it == String::class.java || it.name == "kotlin.coroutines.Continuation" }
+                assertFalse("${method.name} is $name", name in forbidden && !allowed)
             }
         }
     }

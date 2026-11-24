@@ -13,9 +13,11 @@ import com.vidrierapp.data.storage.FilePhotoStorage
 import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
 import com.vidrierapp.data.repository.SharedPreferencesPassRepository
+import com.vidrierapp.data.repository.SharedPreferencesReportedShopsRepository
 import com.vidrierapp.domain.location.LocationProvider
 import com.vidrierapp.domain.repository.CachedShopRepository
 import com.vidrierapp.domain.repository.PassRepository
+import com.vidrierapp.domain.repository.ReportedShopsRepository
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.repository.VisitRepository
 import com.vidrierapp.domain.storage.PhotoStorage
@@ -26,7 +28,9 @@ import com.vidrierapp.domain.usecase.GetShopsUseCase
 import com.vidrierapp.domain.usecase.GetVisitsUseCase
 import com.vidrierapp.domain.usecase.LogVisitUseCase
 import com.vidrierapp.domain.usecase.ObservePassAccessUseCase
+import com.vidrierapp.domain.usecase.ObserveReportedShopsUseCase
 import com.vidrierapp.domain.usecase.PurchasePassUseCase
+import com.vidrierapp.domain.usecase.ReportRentedUseCase
 import com.vidrierapp.domain.usecase.StartTrialUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -134,6 +138,20 @@ class AppContainer(private val context: Context) {
 
     val getCachedShopsUseCase: GetCachedShopsUseCase by lazy {
         GetCachedShopsUseCase(cachedShopRepository)
+    }
+
+    val reportedShopsRepository: ReportedShopsRepository by lazy {
+        SharedPreferencesReportedShopsRepository(
+            context.applicationContext.getSharedPreferences("reported_shops", Context.MODE_PRIVATE)
+        )
+    }
+
+    val reportRentedUseCase: ReportRentedUseCase by lazy {
+        ReportRentedUseCase(shopRepository, reportedShopsRepository)
+    }
+
+    val observeReportedShopsUseCase: ObserveReportedShopsUseCase by lazy {
+        ObserveReportedShopsUseCase(reportedShopsRepository)
     }
 
     val getShopDetailUseCase: GetShopDetailUseCase by lazy {

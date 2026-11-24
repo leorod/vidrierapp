@@ -107,4 +107,31 @@ class ShopMapperTest {
         assertNull(domain.firstVoteAt)
         assertNull(domain.lastVoteAt)
     }
+
+    @Test
+    fun `missing listing status in stale cached json defaults to ACTIVE`() {
+        val stale = """{"id":"s","address":"a","neighborhood":"n","latitude":0.0,"longitude":0.0,"surfaceAreaM2":1,"rentalPrice":"1"}"""
+        val dto = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+            .decodeFromString(ShopDto.serializer(), stale)
+
+        assertEquals(com.vidrierapp.domain.model.ShopStatus.ACTIVE, dto.toDomain().listingStatus)
+    }
+
+    @Test
+    fun `listing status maps known values and falls back to ACTIVE for unknown`() {
+        val base = detailDto()
+
+        assertEquals(
+            com.vidrierapp.domain.model.ShopStatus.UNDER_REVIEW,
+            base.copy(listingStatus = "UNDER_REVIEW").toDomain().listingStatus
+        )
+        assertEquals(
+            com.vidrierapp.domain.model.ShopStatus.RENTED,
+            base.copy(listingStatus = "RENTED").toDomain().listingStatus
+        )
+        assertEquals(
+            com.vidrierapp.domain.model.ShopStatus.ACTIVE,
+            base.copy(listingStatus = "SOMETHING_NEW").toDomain().listingStatus
+        )
+    }
 }

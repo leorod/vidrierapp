@@ -47,6 +47,16 @@ class RetrofitShopRepository(
         emit(Result.success(dto.toDomain()))
     }
 
+    override suspend fun reportRented(shopId: String): Result<Unit> =
+        try {
+            apiService.reportRented(shopId)
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     override fun getCachedShops(): Flow<List<CachedShop>> = flow {
         emitAll(cachedLocalDao.getCachedShops(cutoff()).map { entries -> entries.map { it.toCachedShop() } })
     }

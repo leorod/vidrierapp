@@ -19,7 +19,9 @@ object AppViewModelProvider {
                 getShopDetailUseCase = container().getShopDetailUseCase,
                 observePassAccessUseCase = container().observePassAccessUseCase,
                 startTrialUseCase = container().startTrialUseCase,
-                purchasePassUseCase = container().purchasePassUseCase
+                purchasePassUseCase = container().purchasePassUseCase,
+                reportRentedUseCase = container().reportRentedUseCase,
+                observeReportedShopsUseCase = container().observeReportedShopsUseCase
             ) }
         initializer {
             VisitViewModel(

@@ -3,6 +3,7 @@ package com.vidrierapp.data.repository
 import com.vidrierapp.data.local.dao.CachedLocalDao
 import com.vidrierapp.data.local.entity.CachedLocalEntity
 import com.vidrierapp.data.remote.api.VidrierAppApiService
+import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
 import com.vidrierapp.data.remote.dto.ShopDto
 import com.vidrierapp.domain.usecase.GetCachedShopsUseCase
 import kotlinx.coroutines.flow.Flow
@@ -51,6 +52,7 @@ class RetrofitShopRepositoryTest {
         var online = true
         var detail: ShopDto = dto("s1")
         var calls = 0
+        val reported = mutableListOf<String>()
 
         override suspend fun getShops(category: String?): List<ShopDto> = emptyList()
 
@@ -58,6 +60,12 @@ class RetrofitShopRepositoryTest {
             calls++
             if (!online) throw IOException("offline")
             return detail.copy(id = id)
+        }
+
+        override suspend fun reportRented(id: String): ReportRentedResponseDto {
+            if (!online) throw IOException("offline")
+            reported += id
+            return ReportRentedResponseDto(shopId = id, reportCount = reported.size)
         }
 
     }
@@ -184,5 +192,22 @@ class RetrofitShopRepositoryTest {
             rentalPrice = "$600,000",
             totalVotes = 20
         )
+    }
+
+    @Test
+    fun `reportRented succeeds when the api accepts the report`() = runTest {
+        val result = repository.reportRented("s1")
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("s1"), api.reported)
+    }
+
+    @Test
+    fun `reportRented wraps api failures`() = runTest {
+        api.online = false
+
+        val result = repository.reportRented("s1")
+
+        assertTrue(result.exceptionOrNull() is IOException)
     }
 }

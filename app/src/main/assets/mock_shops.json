@@ -210,5 +210,62 @@
       "NIGHT": 2
     },
     "status": "COLLECTING"
+  },
+  {
+    "id": "shop-mataderos-rented-01",
+    "address": "Av. Juan Bautista Alberdi 6800",
+    "neighborhood": "Mataderos",
+    "latitude": -34.6525,
+    "longitude": -58.502,
+    "surfaceAreaM2": 75,
+    "rentalPrice": "$850,000 / mes",
+    "topCategoryName": "Cafetería",
+    "totalVotes": 58,
+    "votes": [
+      {
+        "categoryId": "cat-cafeteria",
+        "categoryName": "Cafetería",
+        "voteCount": 34,
+        "percentage": 58.6
+      },
+      {
+        "categoryId": "cat-verdulería",
+        "categoryName": "Verdulería",
+        "voteCount": 15,
+        "percentage": 25.9
+      },
+      {
+        "categoryId": "cat-panadería",
+        "categoryName": "Panadería",
+        "voteCount": 9,
+        "percentage": 15.5
+      }
+    ],
+    "contactAgency": "Inmobiliaria Mataderos Prop.",
+    "contactPhone": "+54 11 4687-1234",
+    "contactEmail": "contacto@mataderosprop.example",
+    "firstVoteAt": 1791028800000,
+    "lastVoteAt": 1795359600000,
+    "frequencyCounts": {
+      "DIARIA": 21,
+      "SEMANAL": 9,
+      "OCASIONAL": 4
+    },
+    "votesByWeekday": {
+      "MONDAY": 6,
+      "TUESDAY": 7,
+      "WEDNESDAY": 8,
+      "THURSDAY": 7,
+      "FRIDAY": 9,
+      "SATURDAY": 13,
+      "SUNDAY": 8
+    },
+    "votesByTimeSlot": {
+      "MORNING": 38,
+      "AFTERNOON": 14,
+      "NIGHT": 6
+    },
+    "status": "SUFFICIENT",
+    "listingStatus": "RENTED"
   }
 ]
