@@ -14,9 +14,11 @@ data class Shop(
     val totalVotes: Int = 0,
     val voteBreakdown: List<Vote> = emptyList(),
     val contactAgency: String = "",
-    val lastVoteDate: String? = null,
-    val dailyFrequencyCount: Int? = null,
-    val morningTimeSlotPercentage: Int? = null,
+    val firstVoteAt: Long? = null,
+    val lastVoteAt: Long? = null,
+    val frequencyCounts: Map<ConsumptionFrequency, Int> = emptyMap(),
+    val votesByWeekday: Map<Weekday, Int> = emptyMap(),
+    val votesByTimeSlot: Map<TimeSlot, Int> = emptyMap(),
     val status: String? = null
 ) {
     val isSampleSufficient: Boolean get() = totalVotes >= MIN_VOTES_FOR_METRICS
