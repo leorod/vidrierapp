@@ -150,4 +150,14 @@
     <string name="freq_semanal">Semanal</string>
     <string name="freq_mensual">Mensual</string>
     <string name="freq_ocasional">Ocasional</string>
+    <string name="hub_visits_section">Visitas registradas</string>
+    <string name="hub_saved_shops_section">Locales guardados</string>
+    <string name="hub_saved_shops_empty">Todavía no guardaste locales. Abrí la ficha de un local desde el mapa y quedará disponible acá sin conexión.</string>
+    <string name="hub_saved_today">Guardado hoy</string>
+    <plurals name="hub_saved_days_ago">
+        <item quantity="one">Guardado hace %1$d día</item>
+        <item quantity="other">Guardado hace %1$d días</item>
+    </plurals>
+    <string name="hub_saved_shop_desc">Abrir la ficha guardada de %1$s</string>
+    <string name="hub_visit_shop_unknown">Local visitado</string>
 </resources>

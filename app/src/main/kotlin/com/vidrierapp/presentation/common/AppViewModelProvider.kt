@@ -29,7 +29,7 @@ object AppViewModelProvider {
                 photoStorage = container().photoStorage
             )
         }
-        initializer { MyVisitsHubViewModel(container().getAllVisitsUseCase) }
+        initializer { MyVisitsHubViewModel(container().getAllVisitsUseCase, container().getCachedShopsUseCase, container().clock) }
     }
 }
 

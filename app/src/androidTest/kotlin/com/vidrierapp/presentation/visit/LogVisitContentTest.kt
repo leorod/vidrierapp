@@ -14,6 +14,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import com.vidrierapp.domain.model.Visit
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.vidrierapp.R
@@ -143,5 +145,31 @@ class LogVisitContentTest {
             .performClick()
 
         composeTestRule.onNodeWithContentDescription(two).assertContentDescriptionEquals(two)
+    }
+
+    @Test
+    fun pastVisitsAreListedForAKnownShop() {
+        val past = listOf(
+            Visit(id = "v1", shopId = "shop-1", timestamp = 1_700_000_000_000L, notes = "esquina concurrida", pedestrianCount = 7)
+        )
+        setContent(VisitUiState(shopId = "shop-1", pastVisits = past))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.visit_list_title)).performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("esquina concurrida").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText(formatVisitDate(1_700_000_000_000L)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun pastVisitsEmptyMessageIsShownForAKnownShopWithoutVisits() {
+        setContent(VisitUiState(shopId = "shop-1"))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.visit_no_entries)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun pastVisitsSectionIsHiddenWithoutShop() {
+        setContent(VisitUiState())
+
+        composeTestRule.onAllNodesWithText(context.getString(R.string.visit_list_title)).assertCountEquals(0)
     }
 }

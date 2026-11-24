@@ -45,7 +45,7 @@ class VisitViewModel(
         }
         pastVisitsJob = viewModelScope.launch {
             getVisitsUseCase(shopId).collect { visits ->
-                _uiState.update { it.copy(pastVisits = visits) }
+                _uiState.update { it.copy(pastVisits = visits.sortedByDescending { v -> v.timestamp }) }
             }
         }
     }

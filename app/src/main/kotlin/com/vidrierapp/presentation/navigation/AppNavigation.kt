@@ -81,6 +81,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     MyVisitsHubScreen(
                         onNewVisitClick = {
                             backStack.add(LogVisitDestination(NO_SHOP_ID))
+                        },
+                        onSavedShopClick = { shopId ->
+                            backStack.add(ShopDetailDestination(shopId))
                         }
                     )
                 }
