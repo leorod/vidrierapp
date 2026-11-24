@@ -1,5 +1,9 @@
 package com.vidrierapp.presentation.map
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,8 +15,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,11 +34,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -36,10 +49,14 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.vidrierapp.R
+import com.vidrierapp.domain.location.Neighborhood
+import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.presentation.common.AppViewModelProvider
@@ -50,6 +67,7 @@ private const val NEUTRAL_MARKER_HUE = 210f
 private const val NEUTRAL_MARKER_ALPHA = 0.6f
 private const val SINGLE_SHOP_ZOOM = 14f
 private const val DEFAULT_ZOOM = 13f
+private const val USER_LOCATION_ZOOM = 15f
 private const val BOUNDS_PADDING_PX = 120
 private val DEFAULT_LOCATION = LatLng(-34.65, -58.50)
 
@@ -63,6 +81,31 @@ fun MapScreen(
     viewModel: MapViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val locationState by viewModel.locationState.collectAsState()
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results -> viewModel.onPermissionResult(results.values.any { it }) }
+    val requestLocationPermission = {
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    LaunchedEffect(locationState.permission) {
+        if (locationState.permission == LocationPermission.Unknown) {
+            val granted = listOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ).any {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
+            if (granted) viewModel.onPermissionResult(true) else requestLocationPermission()
+        }
+    }
 
     when (val state = uiState) {
         MapUiState.Loading -> CenteredMessage(modifier) {
@@ -98,6 +141,16 @@ fun MapScreen(
             onShopSelected = viewModel::selectShop,
             onShopDismissed = { viewModel.selectShop(null) },
             onShopClick = onShopClick,
+            locationState = locationState,
+            onMyLocationClick = {
+                if (locationState.isGranted) viewModel.recenterOnUser() else requestLocationPermission()
+            },
+            onGrantClick = requestLocationPermission,
+            onQueryChange = viewModel::onSearchQueryChange,
+            onNeighborhoodSelected = viewModel::onNeighborhoodSelected,
+            onPickOnMapClick = viewModel::startManualPick,
+            onCancelPickClick = viewModel::cancelManualPick,
+            onManualLocationSelected = viewModel::onManualLocationSelected,
             modifier = modifier
         )
     }
@@ -130,14 +183,24 @@ private fun ShopsMap(
     onShopSelected: (Shop) -> Unit,
     onShopDismissed: () -> Unit,
     onShopClick: (shopId: String) -> Unit,
+    locationState: LocationUiState,
+    onMyLocationClick: () -> Unit,
+    onGrantClick: () -> Unit,
+    onQueryChange: (String) -> Unit,
+    onNeighborhoodSelected: (Neighborhood) -> Unit,
+    onPickOnMapClick: () -> Unit,
+    onCancelPickClick: () -> Unit,
+    onManualLocationSelected: (GeoPoint) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val currentLocationState by rememberUpdatedState(locationState)
     val coroutineScope = rememberCoroutineScope()
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(DEFAULT_LOCATION, DEFAULT_ZOOM)
     }
 
     LaunchedEffect(shops) {
+        if (currentLocationState.centerRequest != null) return@LaunchedEffect
         when {
             shops.isEmpty() -> cameraPositionState.move(
                 CameraUpdateFactory.newLatLngZoom(DEFAULT_LOCATION, DEFAULT_ZOOM)
@@ -160,6 +223,17 @@ private fun ShopsMap(
         }
     }
 
+    LaunchedEffect(locationState.centerRequest?.id) {
+        locationState.centerRequest?.let { request ->
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(
+                    LatLng(request.point.latitude, request.point.longitude),
+                    USER_LOCATION_ZOOM
+                )
+            )
+        }
+    }
+
     var lastSelectedShop by remember { mutableStateOf(selectedShop) }
     if (selectedShop != null && selectedShop != lastSelectedShop) {
         lastSelectedShop = selectedShop
@@ -169,8 +243,23 @@ private fun ShopsMap(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            onMapClick = { onShopDismissed() }
+            properties = MapProperties(isMyLocationEnabled = locationState.isGranted),
+            uiSettings = MapUiSettings(myLocationButtonEnabled = false),
+            onMapClick = { latLng ->
+                if (locationState.isPickingManually) {
+                    onManualLocationSelected(GeoPoint(latLng.latitude, latLng.longitude))
+                } else {
+                    onShopDismissed()
+                }
+            }
         ) {
+            locationState.manualLocation?.let { manual ->
+                Marker(
+                    state = MarkerState(position = LatLng(manual.latitude, manual.longitude)),
+                    title = stringResource(R.string.map_location_manual_marker),
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                )
+            }
             shops.forEach { shop ->
                 val position = LatLng(shop.latitude, shop.longitude)
                 val title = if (shop.isSampleSufficient) {
@@ -218,18 +307,51 @@ private fun ShopsMap(
                 )
             }
         }
-        if (shops.isEmpty()) {
-            Surface(
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (locationState.showFallback) {
+                LocationFallbackBanner(
+                    isPermissionDenied = locationState.permission == LocationPermission.Denied,
+                    isPicking = locationState.isPickingManually,
+                    query = locationState.searchQuery,
+                    suggestions = locationState.suggestions,
+                    onQueryChange = onQueryChange,
+                    onSuggestionClick = onNeighborhoodSelected,
+                    onGrantClick = onGrantClick,
+                    onPickOnMapClick = onPickOnMapClick,
+                    onCancelPickClick = onCancelPickClick
+                )
+            }
+            if (shops.isEmpty()) {
+                Surface(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 4.dp
+                ) {
+                    Text(
+                        text = stringResource(R.string.map_no_shops_found),
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        if (selectedShop == null) {
+            FloatingActionButton(
+                onClick = onMyLocationClick,
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(16.dp),
-                shape = MaterialTheme.shapes.medium,
-                tonalElevation = 4.dp
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.map_no_shops_found),
-                    modifier = Modifier.padding(16.dp),
-                    textAlign = TextAlign.Center
+                Icon(
+                    imageVector = Icons.Filled.MyLocation,
+                    contentDescription = stringResource(R.string.map_btn_my_location_desc)
                 )
             }
         }

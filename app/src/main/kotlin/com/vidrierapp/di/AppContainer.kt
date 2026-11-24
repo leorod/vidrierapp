@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import com.vidrierapp.data.local.database.MIGRATION_1_2
 import com.vidrierapp.data.local.database.VidrierAppDatabase
+import com.vidrierapp.data.location.FusedLocationProvider
 import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
 import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
+import com.vidrierapp.domain.location.LocationProvider
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.repository.VisitRepository
 import com.vidrierapp.domain.usecase.GetAllVisitsUseCase
@@ -71,6 +73,10 @@ class AppContainer(private val context: Context) {
 
     val visitRepository: VisitRepository by lazy {
         RoomVisitRepository(database.visitDao())
+    }
+
+    val locationProvider: LocationProvider by lazy {
+        FusedLocationProvider(context.applicationContext)
     }
 
     val getShopsUseCase: GetShopsUseCase by lazy {

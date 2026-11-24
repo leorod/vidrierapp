@@ -23,6 +23,14 @@
     <string name="map_card_total_votes">%1$d votos de vecinos</string>
     <string name="map_card_view_detail">Ver ficha completa</string>
     <string name="map_location_permission_denied">Permiso de GPS no otorgado. Podés buscar tu barrio manualmente.</string>
+    <string name="map_location_unavailable">No pudimos obtener tu ubicación. Buscá tu barrio o marcá una posición en el mapa.</string>
+    <string name="map_location_grant">Permitir ubicación</string>
+    <string name="map_location_pick_on_map">Marcar en el mapa</string>
+    <string name="map_location_pick_hint">Tocá el mapa para fijar tu posición</string>
+    <string name="map_location_pick_cancel">Cancelar</string>
+    <string name="map_location_manual_marker">Posición elegida</string>
+    <string name="map_location_search_clear">Borrar búsqueda</string>
+    <string name="map_location_fallback_desc">Ubicación no disponible, elegí una zona manualmente</string>
     <string name="map_marker_collecting">En recolección (%1$d/%2$d)</string>
     <string name="map_marker_desc">Local en %1$s</string>
     <string name="map_no_shops_found">No se encontraron locales para el filtro seleccionado.</string>
