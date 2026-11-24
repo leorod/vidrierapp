@@ -16,7 +16,18 @@ class MapViewModel(
     private val _uiState = MutableStateFlow<MapUiState>(MapUiState.Loading)
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
 
+    private var currentFilter: String? = null
+
+    init {
+        loadShops()
+    }
+
+    fun retry() {
+        loadShops(currentFilter)
+    }
+
     fun loadShops(categoryFilter: String? = null) {
+        currentFilter = categoryFilter
         viewModelScope.launch {
             _uiState.value = MapUiState.Loading
             getShopsUseCase(categoryFilter).collect { result ->

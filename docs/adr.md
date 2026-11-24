@@ -58,6 +58,11 @@
 * **Decisión:** (a) Todos los ViewModels se crean con una única factory, `AppViewModelProvider.Factory` (`viewModelFactory { initializer { ... } }`), que obtiene los UseCases de `AppContainer` vía `VidrierAppApplication.container`; las pantallas la usan con `viewModel(factory = AppViewModelProvider.Factory)`. (b) La barra inferior tiene dos pestañas de nivel superior, "Explorar" (`MapDestination`) y "Bitácora" (`VisitsHubDestination`), visibles solo cuando el tope del back stack es una de ellas; al cambiar de pestaña se reemplaza el back stack por ese único destino. (c) El FAB "Nueva visita" abre `LogVisitDestination` con `shopId` vacío (`NO_SHOP_ID`) hasta que VIS-03 agregue `shopId` nulo y dirección manual.
 * **Motivación:** (a) Definir el patrón una sola vez, sin Hilt ni Koin, para que todas las pantallas lo reutilicen. (b) Es lo más simple: un único back stack sin estado por pestaña, y el detalle o el registro de visita ocultan la barra. (c) Permite entregar el flujo de la bitácora sin bloquear NAV-01 por VIS-03.
 
+### 2.5. Marcadores del Mapa y Suficiencia de Muestra
+
+* **Decisión:** (a) La suficiencia de la muestra se calcula en el dominio: `Shop.isSampleSufficient` es `totalVotes >= MIN_VOTES_FOR_METRICS` (15), sin leer el campo `status` del mock. (b) El color del marcador es un matiz determinístico derivado del `id` del rubro líder (`categoryMarkerHue`); si la muestra no alcanza, el marcador es neutro (matiz fijo y opacidad reducida) y su título indica "En recolección (votos/15)". (c) `MapViewModel` carga los locales en su `init` y expone `retry()` para recargar con el filtro actual.
+* **Motivación:** (a) `status` mezcla suficiencia de muestra con disponibilidad del local; el umbral por votos es una regla de negocio y vive en el dominio. (b) El mismo rubro siempre tiene el mismo color sin mantener una tabla de colores. (c) La pantalla no necesita disparar la carga y el estado sobrevive a la recomposición.
+
 ---
 
 ## 3. Decisiones de Backend y Procesamiento de Datos
