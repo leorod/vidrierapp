@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -56,6 +57,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.vidrierapp.R
 import com.vidrierapp.domain.location.Neighborhood
+import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
@@ -137,6 +139,9 @@ fun MapScreen(
 
         is MapUiState.Success -> ShopsMap(
             shops = state.shops,
+            categories = state.categories,
+            selectedCategoryId = state.selectedCategoryFilter,
+            onCategorySelected = viewModel::selectCategory,
             selectedShop = state.selectedShop,
             onShopSelected = viewModel::selectShop,
             onShopDismissed = { viewModel.selectShop(null) },
@@ -179,6 +184,9 @@ private fun CenteredMessage(
 @Composable
 private fun ShopsMap(
     shops: List<Shop>,
+    categories: List<Category>,
+    selectedCategoryId: String?,
+    onCategorySelected: (String?) -> Unit,
     selectedShop: Shop?,
     onShopSelected: (Shop) -> Unit,
     onShopDismissed: () -> Unit,
@@ -311,9 +319,15 @@ private fun ShopsMap(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(16.dp),
+                .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            CategoryFilterBar(
+                categories = categories,
+                selectedCategoryId = selectedCategoryId,
+                onCategorySelected = onCategorySelected,
+                modifier = Modifier.fillMaxWidth()
+            )
             if (locationState.showFallback) {
                 LocationFallbackBanner(
                     isPermissionDenied = locationState.permission == LocationPermission.Denied,
@@ -324,7 +338,8 @@ private fun ShopsMap(
                     onSuggestionClick = onNeighborhoodSelected,
                     onGrantClick = onGrantClick,
                     onPickOnMapClick = onPickOnMapClick,
-                    onCancelPickClick = onCancelPickClick
+                    onCancelPickClick = onCancelPickClick,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
             if (shops.isEmpty()) {
@@ -333,11 +348,25 @@ private fun ShopsMap(
                     shape = MaterialTheme.shapes.medium,
                     tonalElevation = 4.dp
                 ) {
-                    Text(
-                        text = stringResource(R.string.map_no_shops_found),
+                    Column(
                         modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.map_no_shops_found),
+                            textAlign = TextAlign.Center
+                        )
+                        if (selectedCategoryId != null) {
+                            Button(
+                                onClick = { onCategorySelected(null) },
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .heightIn(min = 48.dp)
+                            ) {
+                                Text(text = stringResource(R.string.map_filter_reset))
+                            }
+                        }
+                    }
                 }
             }
         }
