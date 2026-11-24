@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import com.vidrierapp.data.local.database.MIGRATION_1_2
 import com.vidrierapp.data.local.database.MIGRATION_2_3
+import com.vidrierapp.data.local.database.MIGRATION_3_4
 import com.vidrierapp.data.local.database.VidrierAppDatabase
 import com.vidrierapp.data.location.FusedLocationProvider
 import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
+import com.vidrierapp.data.storage.FilePhotoStorage
 import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
 import com.vidrierapp.data.repository.SharedPreferencesPassRepository
@@ -16,6 +18,7 @@ import com.vidrierapp.domain.repository.CachedShopRepository
 import com.vidrierapp.domain.repository.PassRepository
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.repository.VisitRepository
+import com.vidrierapp.domain.storage.PhotoStorage
 import com.vidrierapp.domain.usecase.GetAllVisitsUseCase
 import com.vidrierapp.domain.usecase.GetCachedShopsUseCase
 import com.vidrierapp.domain.usecase.GetShopDetailUseCase
@@ -82,7 +85,7 @@ class AppContainer(private val context: Context) {
             context.applicationContext,
             VidrierAppDatabase::class.java,
             "vidrierapp.db"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
     }
 
     private val retrofitShopRepository: RetrofitShopRepository by lazy {
@@ -95,6 +98,10 @@ class AppContainer(private val context: Context) {
 
     val visitRepository: VisitRepository by lazy {
         RoomVisitRepository(database.visitDao())
+    }
+
+    val photoStorage: PhotoStorage by lazy {
+        FilePhotoStorage(context.applicationContext)
     }
 
     val locationProvider: LocationProvider by lazy {

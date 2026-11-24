@@ -1,5 +1,9 @@
 package com.vidrierapp.presentation.visit
 
+import android.content.ActivityNotFoundException
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,12 +29,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -63,9 +73,28 @@ fun LogVisitScreen(
         if (uiState.saveSuccess) onBackClick()
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val cameraUnavailableMessage = stringResource(R.string.visit_camera_unavailable)
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        viewModel.onPhotoCaptureResult(success)
+    }
+    val launchCamera: () -> Unit = {
+        val captureUri = viewModel.startPhotoCapture()
+        try {
+            takePicture.launch(Uri.parse(captureUri))
+        } catch (_: ActivityNotFoundException) {
+            viewModel.onPhotoCaptureResult(false)
+            scope.launch { snackbarHostState.showSnackbar(cameraUnavailableMessage) }
+        }
+    }
+
     LogVisitContent(
         uiState = uiState,
         onBackClick = onBackClick,
+        onAddPhotoClick = launchCamera,
+        onRemovePhoto = viewModel::removePhoto,
+        snackbarHostState = snackbarHostState,
         onNotesChange = viewModel::updateNotes,
         onAddressChange = viewModel::updateManualAddress,
         onIncrementPedestrians = viewModel::incrementPedestrians,
@@ -85,9 +114,13 @@ fun LogVisitContent(
     onIncrementPedestrians: () -> Unit,
     onDecrementPedestrians: () -> Unit,
     onSaveClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddPhotoClick: () -> Unit = {},
+    onRemovePhoto: (String) -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val haptics = LocalHapticFeedback.current
+    val takePhotoDescription = stringResource(R.string.visit_btn_take_photo_desc)
     val totalDescription = pluralStringResource(
         R.plurals.visit_pedestrian_total_desc,
         uiState.pedestrianCount,
@@ -95,6 +128,7 @@ fun LogVisitContent(
     )
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.visit_title)) },
@@ -200,6 +234,40 @@ fun LogVisitContent(
                 label = { Text(text = stringResource(R.string.visit_notes_label)) },
                 placeholder = { Text(text = stringResource(R.string.visit_notes_hint)) }
             )
+            Text(
+                text = stringResource(R.string.visit_photos_label),
+                style = MaterialTheme.typography.titleMedium
+            )
+            OutlinedButton(
+                onClick = onAddPhotoClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .semantics {
+                        contentDescription = takePhotoDescription
+                    }
+            ) {
+                Icon(imageVector = Icons.Filled.PhotoCamera, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.visit_btn_take_photo),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+            if (uiState.photoUris.isNotEmpty()) {
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.visit_photos_count,
+                        uiState.photoUris.size,
+                        uiState.photoUris.size
+                    ),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                PhotoThumbnailsRow(
+                    photoPaths = uiState.photoUris,
+                    modifier = Modifier.fillMaxWidth(),
+                    onRemovePhoto = onRemovePhoto
+                )
+            }
             Text(
                 text = stringResource(R.string.visit_privacy_notice),
                 style = MaterialTheme.typography.bodySmall

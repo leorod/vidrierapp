@@ -10,7 +10,7 @@ data class VisitEntity(
     val shopId: String?,
     val timestamp: Long,
     val notes: String,
-    val photoUrisCsv: String = "",
+    val photoPaths: String = "[]",
     val pedestrianCount: Int = 0,
     val manualAddress: String? = null
 )

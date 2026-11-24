@@ -143,6 +143,8 @@ private fun VisitCard(visit: Visit, modifier: Modifier = Modifier) {
         .getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
         .format(Date(visit.timestamp))
 
+    val galleryDescription = stringResource(R.string.hub_photos_gallery_desc)
+
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -165,6 +167,16 @@ private fun VisitCard(visit: Visit, modifier: Modifier = Modifier) {
                 text = pluralStringResource(R.plurals.visit_pedestrian_count, visit.pedestrianCount, visit.pedestrianCount),
                 style = MaterialTheme.typography.bodyMedium
             )
+            if (visit.photoUris.isNotEmpty()) {
+                PhotoThumbnailsRow(
+                    photoPaths = visit.photoUris,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .semantics { contentDescription = galleryDescription },
+                    thumbnailSize = 56.dp
+                )
+            }
             if (visit.notes.isNotBlank()) {
                 Text(text = visit.notes, style = MaterialTheme.typography.bodyMedium)
             }

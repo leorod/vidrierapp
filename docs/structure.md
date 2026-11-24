@@ -77,5 +77,5 @@ app/src/main/kotlin/com/vidrierapp/
 
 # Resource Management & Manifest
 - strings.xml: Centralized resource keys covering all screens, TalkBack accessibility labels, dialogs, and error messages (satisfying RNF-11 string interning).
-- AndroidManifest.xml: Configured with foreground location (ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION), CAMERA, INTERNET, and linked to VidrierAppApplication.
+- AndroidManifest.xml: Configured with foreground location (ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION), INTERNET, FileProvider for visit photos, and linked to VidrierAppApplication.
 The project compiles cleanly (./gradlew assembleDebug exits with code 0).

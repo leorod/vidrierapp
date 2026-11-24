@@ -117,7 +117,14 @@
     <string name="visit_photos_label">Fotografías del local y vidriera</string>
     <string name="visit_btn_take_photo">Capturar Fotografía</string>
     <string name="visit_btn_take_photo_desc">Abrir la cámara para fotografiar la vidriera del local</string>
-    <string name="visit_photos_count">%1$d fotografías adjuntas</string>
+    <plurals name="visit_photos_count">
+        <item quantity="one">%1$d fotografía adjunta</item>
+        <item quantity="other">%1$d fotografías adjuntas</item>
+    </plurals>
+    <string name="visit_photo_thumbnail_desc">Fotografía %1$d de la visita</string>
+    <string name="visit_photo_delete_desc">Eliminar fotografía %1$d</string>
+    <string name="visit_camera_unavailable">No hay una aplicación de cámara disponible en este dispositivo.</string>
+    <string name="hub_photos_gallery_desc">Fotografías de la visita</string>
     <string name="visit_privacy_notice">Privacidad: Todas las notas y fotografías se guardan localmente en tu teléfono (Room DB) y nunca se envían al servidor.</string>
     <string name="visit_btn_submit">Guardar Visita en Dispositivo</string>
     <string name="visit_save_success">Visita técnica registrada con éxito en tu bitácora local.</string>

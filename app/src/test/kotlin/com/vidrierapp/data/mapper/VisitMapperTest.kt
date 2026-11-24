@@ -21,7 +21,7 @@ class VisitMapperTest {
         val visit = visit(emptyList())
         val entity = visit.toEntity()
 
-        assertEquals("", entity.photoUrisCsv)
+        assertEquals("[]", entity.photoPaths)
         assertEquals(visit, entity.toDomain())
     }
 
@@ -30,7 +30,7 @@ class VisitMapperTest {
         val visit = visit(listOf("content://a"))
         val entity = visit.toEntity()
 
-        assertEquals("content://a", entity.photoUrisCsv)
+        assertEquals("[\"content://a\"]", entity.photoPaths)
         assertEquals(visit, entity.toDomain())
     }
 
@@ -39,8 +39,22 @@ class VisitMapperTest {
         val visit = visit(listOf("content://a", "content://b"))
         val entity = visit.toEntity()
 
-        assertEquals("content://a,content://b", entity.photoUrisCsv)
+        assertEquals("[\"content://a\",\"content://b\"]", entity.photoPaths)
         assertEquals(visit, entity.toDomain())
+    }
+
+    @Test
+    fun `paths containing commas survive the round trip`() {
+        val visit = visit(listOf("/data/a,b.jpg", "/data/c.jpg"))
+
+        assertEquals(visit, visit.toEntity().toDomain())
+    }
+
+    @Test
+    fun `blank stored paths decode to an empty list`() {
+        val entity = visit(emptyList()).toEntity().copy(photoPaths = "")
+
+        assertEquals(emptyList<String>(), entity.toDomain().photoUris)
     }
 
     @Test
@@ -50,7 +64,7 @@ class VisitMapperTest {
             shopId = "s9",
             timestamp = 99L,
             notes = "n",
-            photoUrisCsv = "x,y",
+            photoPaths = "[\"x\",\"y\"]",
             pedestrianCount = 3
         )
 
