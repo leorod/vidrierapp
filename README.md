@@ -56,3 +56,15 @@ VidrierApp propone un modelo colaborativo de captación de demanda real mediante
 * **Branching Model:** *Trunk-based Development*. Tratamos el branch `main` como nuestro trunk principal. Trabajamos directamente sobre feature branches (con prefijo `feature/` o `feat/`) lo más atómicos posible, a mergear directamente a `main` a través de PRs. 
 *Nice to have, a definir: CI en Github Actions para garantizar estabilidad.*
 * **Estructura de Documentación:** Todos los recursos gráficos, diagramas de arquitectura y el PDF final consolidado se encuentran en la carpeta `docs/` de este repositorio.
+
+## Configuración local: API key de Google Maps
+
+El mapa necesita una API key propia. Sin ella la app compila y abre, pero el mapa se ve vacío y no dibuja marcadores.
+
+1. En [Google Cloud Console](https://console.cloud.google.com) crear un proyecto y habilitar **Maps SDK for Android**.
+2. En "Credenciales" crear una **Clave de API** y restringirla a "Apps de Android" con el paquete `com.vidrierapp` y la huella SHA-1 del keystore de debug de cada desarrollador:
+   `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android`
+3. Guardarla en `~/.gradle/gradle.properties` (fuera del repo):
+   `MAPS_API_KEY=tu_clave`
+
+La clave nunca se commitea. Cada integrante usa la suya, o se agregan ambas huellas SHA-1 a una misma clave.
