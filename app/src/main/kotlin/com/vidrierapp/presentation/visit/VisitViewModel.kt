@@ -24,7 +24,8 @@ class VisitViewModel(
     private val _uiState = MutableStateFlow(
         VisitUiState(
             notes = savedStateHandle[KEY_NOTES] ?: "",
-            manualAddress = savedStateHandle[KEY_ADDRESS] ?: ""
+            manualAddress = savedStateHandle[KEY_ADDRESS] ?: "",
+            pedestrianCount = (savedStateHandle.get<Int>(KEY_PEDESTRIANS) ?: 0).coerceAtLeast(0)
         )
     )
     val uiState: StateFlow<VisitUiState> = _uiState.asStateFlow()
@@ -59,11 +60,17 @@ class VisitViewModel(
     }
 
     fun incrementPedestrians() {
-        _uiState.update { it.copy(pedestrianCount = it.pedestrianCount + 1) }
+        updatePedestrians { it + 1 }
     }
 
     fun decrementPedestrians() {
-        _uiState.update { it.copy(pedestrianCount = (it.pedestrianCount - 1).coerceAtLeast(0)) }
+        updatePedestrians { (it - 1).coerceAtLeast(0) }
+    }
+
+    private fun updatePedestrians(transform: (Int) -> Int) {
+        val count = transform(_uiState.value.pedestrianCount)
+        savedStateHandle[KEY_PEDESTRIANS] = count
+        _uiState.update { it.copy(pedestrianCount = count) }
     }
 
     fun saveVisit() {
@@ -89,6 +96,7 @@ class VisitViewModel(
                 onSuccess = {
                     savedStateHandle.remove<String>(KEY_NOTES)
                     savedStateHandle.remove<String>(KEY_ADDRESS)
+                    savedStateHandle.remove<Int>(KEY_PEDESTRIANS)
                     _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                 },
                 onFailure = {
@@ -101,5 +109,6 @@ class VisitViewModel(
     private companion object {
         const val KEY_NOTES = "draft_notes"
         const val KEY_ADDRESS = "draft_manual_address"
+        const val KEY_PEDESTRIANS = "draft_pedestrian_count"
     }
 }
