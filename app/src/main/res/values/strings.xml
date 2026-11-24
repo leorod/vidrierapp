@@ -23,6 +23,8 @@
     <string name="map_card_total_votes">%1$d votos de vecinos</string>
     <string name="map_card_view_detail">Ver ficha completa</string>
     <string name="map_location_permission_denied">Permiso de GPS no otorgado. Podés buscar tu barrio manualmente.</string>
+    <string name="map_marker_collecting">En recolección (%1$d/%2$d)</string>
+    <string name="map_marker_desc">Local en %1$s</string>
     <string name="map_no_shops_found">No se encontraron locales para el filtro seleccionado.</string>
 
     <!-- Detalle del Local (RF03, RNF-06) -->
