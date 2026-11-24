@@ -3,6 +3,8 @@ package com.vidrierapp.presentation.visit
 import androidx.lifecycle.SavedStateHandle
 import com.vidrierapp.domain.model.Visit
 import com.vidrierapp.domain.repository.VisitRepository
+import com.vidrierapp.domain.storage.PhotoSlot
+import com.vidrierapp.domain.storage.PhotoStorage
 import com.vidrierapp.domain.usecase.GetVisitsUseCase
 import com.vidrierapp.domain.usecase.LogVisitUseCase
 import com.vidrierapp.presentation.navigation.NO_SHOP_ID
@@ -37,14 +39,50 @@ class VisitViewModelTest {
         }
     }
 
+    private class FakePhotoStorage : PhotoStorage {
+        val files = mutableSetOf<String>()
+        val deleted = mutableListOf<String>()
+        private var counter = 0
+        var lastSlot: PhotoSlot? = null
+
+        override fun createPhoto(): PhotoSlot {
+            val slot = PhotoSlot("/photos/${counter++}.jpg", "content://fake/${counter}")
+            lastSlot = slot
+            return slot
+        }
+
+        override fun exists(path: String): Boolean = path in files
+
+        override fun delete(path: String) {
+            files.remove(path)
+            deleted.add(path)
+        }
+
+        fun captureWritesFile() {
+            files.add(lastSlot!!.path)
+        }
+    }
+
+    private val storage = FakePhotoStorage()
+
     private fun createViewModel(
         repository: FakeVisitRepository = FakeVisitRepository(),
-        handle: SavedStateHandle = SavedStateHandle()
+        handle: SavedStateHandle = SavedStateHandle(),
+        photoStorage: FakePhotoStorage = storage
     ) = VisitViewModel(
         savedStateHandle = handle,
         logVisitUseCase = LogVisitUseCase(repository),
-        getVisitsUseCase = GetVisitsUseCase(repository)
+        getVisitsUseCase = GetVisitsUseCase(repository),
+        photoStorage = photoStorage
     )
+
+    private fun VisitViewModel.capturePhoto(): String {
+        startPhotoCapture()
+        storage.captureWritesFile()
+        val path = storage.lastSlot!!.path
+        onPhotoCaptureResult(true)
+        return path
+    }
 
     @Before
     fun setUp() {
@@ -275,5 +313,133 @@ class VisitViewModelTest {
         viewModel.initForShop("shop-1")
 
         assertEquals(past, viewModel.uiState.value.pastVisits)
+    }
+
+    @Test
+    fun `successful capture adds the photo to the state`() {
+        val viewModel = createViewModel()
+
+        val uri = viewModel.startPhotoCapture()
+        assertEquals(storage.lastSlot!!.captureUri, uri)
+        storage.captureWritesFile()
+        viewModel.onPhotoCaptureResult(true)
+
+        assertEquals(listOf(storage.lastSlot!!.path), viewModel.uiState.value.photoUris)
+    }
+
+    @Test
+    fun `cancelled capture adds nothing and deletes the pending file`() {
+        val viewModel = createViewModel()
+
+        viewModel.startPhotoCapture()
+        val path = storage.lastSlot!!.path
+        viewModel.onPhotoCaptureResult(false)
+
+        assertTrue(viewModel.uiState.value.photoUris.isEmpty())
+        assertTrue(path in storage.deleted)
+    }
+
+    @Test
+    fun `result without a pending capture is ignored`() {
+        val viewModel = createViewModel()
+
+        viewModel.onPhotoCaptureResult(true)
+
+        assertTrue(viewModel.uiState.value.photoUris.isEmpty())
+    }
+
+    @Test
+    fun `removing a photo drops it from the state and deletes the file`() {
+        val viewModel = createViewModel()
+        val first = viewModel.capturePhoto()
+        val second = viewModel.capturePhoto()
+
+        viewModel.removePhoto(first)
+
+        assertEquals(listOf(second), viewModel.uiState.value.photoUris)
+        assertTrue(first in storage.deleted)
+        assertFalse(storage.exists(first))
+    }
+
+    @Test
+    fun `photos survive recreation through the saved state handle`() {
+        val handle = SavedStateHandle()
+        val path = createViewModel(handle = handle).capturePhoto()
+
+        val restored = createViewModel(handle = handle)
+
+        assertEquals(listOf(path), restored.uiState.value.photoUris)
+    }
+
+    @Test
+    fun `a capture finished after process death is attached to the restored draft`() {
+        val handle = SavedStateHandle()
+        createViewModel(handle = handle).startPhotoCapture()
+        storage.captureWritesFile()
+        val path = storage.lastSlot!!.path
+
+        val restored = createViewModel(handle = handle)
+        restored.onPhotoCaptureResult(true)
+
+        assertEquals(listOf(path), restored.uiState.value.photoUris)
+    }
+
+    @Test
+    fun `restore drops photos whose file no longer exists`() {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(handle = handle)
+        val gone = viewModel.capturePhoto()
+        val kept = viewModel.capturePhoto()
+        storage.files.remove(gone)
+
+        val restored = createViewModel(handle = handle)
+
+        assertEquals(listOf(kept), restored.uiState.value.photoUris)
+    }
+
+    @Test
+    fun `save includes the photos and keeps the files`() {
+        val repository = FakeVisitRepository()
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(repository, handle)
+        viewModel.initForShop("shop-1")
+        val path = viewModel.capturePhoto()
+
+        viewModel.saveVisit()
+
+        assertEquals(listOf(path), repository.saved.single().photoUris)
+        assertTrue(storage.exists(path))
+        assertTrue(createViewModel(handle = handle).uiState.value.photoUris.isEmpty())
+    }
+
+    @Test
+    fun `save failure keeps the photos in the draft`() {
+        val repository = FakeVisitRepository(saveResult = Result.failure(RuntimeException()))
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(repository, handle)
+        viewModel.initForShop("shop-1")
+        val path = viewModel.capturePhoto()
+
+        viewModel.saveVisit()
+
+        assertEquals(listOf(path), createViewModel(handle = handle).uiState.value.photoUris)
+        assertTrue(storage.exists(path))
+    }
+
+    @Test
+    fun `discarding the draft deletes photos and the pending capture`() {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(handle = handle)
+        val path = viewModel.capturePhoto()
+        viewModel.startPhotoCapture()
+        val pending = storage.lastSlot!!.path
+        storage.captureWritesFile()
+
+        viewModel.discardDraftPhotos()
+
+        assertFalse(storage.exists(path))
+        assertFalse(storage.exists(pending))
+        assertTrue(viewModel.uiState.value.photoUris.isEmpty())
+        assertTrue(createViewModel(handle = handle).uiState.value.photoUris.isEmpty())
     }
 }

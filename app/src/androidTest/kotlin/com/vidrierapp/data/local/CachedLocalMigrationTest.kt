@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.vidrierapp.data.local.database.MIGRATION_1_2
 import com.vidrierapp.data.local.database.MIGRATION_2_3
+import com.vidrierapp.data.local.database.MIGRATION_3_4
 import com.vidrierapp.data.local.database.VidrierAppDatabase
 import com.vidrierapp.data.local.entity.CachedLocalEntity
 import kotlinx.coroutines.flow.first
@@ -39,7 +40,7 @@ class CachedLocalMigrationTest {
         }
 
         val database = Room.databaseBuilder(context, VidrierAppDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
         val visits = runBlocking { database.visitDao().getAllVisits().first() }
         val cached = runBlocking {
