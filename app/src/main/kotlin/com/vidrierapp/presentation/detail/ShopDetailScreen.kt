@@ -25,6 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -55,8 +61,22 @@ fun ShopDetailScreen(
         viewModel.loadShop(shopId)
     }
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val noAppMessage = stringResource(R.string.detail_contact_no_app)
+    val launch: (ContactIntentData?) -> Unit = { data ->
+        if (!launchContactIntent(context, data)) {
+            scope.launch { snackbarHostState.showSnackbar(noAppMessage) }
+        }
+    }
+
     ShopDetailContent(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onCallClick = launch,
+        onWhatsAppClick = launch,
+        onEmailClick = launch,
         onBackClick = onBackClick,
         onLogVisitClick = onLogVisitClick,
         onReportRentedClick = onReportRentedClick,
@@ -77,10 +97,15 @@ fun ShopDetailContent(
     onRetry: () -> Unit,
     onStartTrialClick: () -> Unit,
     onPurchasePassClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onCallClick: (ContactIntentData?) -> Unit = {},
+    onWhatsAppClick: (ContactIntentData?) -> Unit = {},
+    onEmailClick: (ContactIntentData?) -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.detail_title)) },
@@ -135,6 +160,9 @@ fun ShopDetailContent(
                 onPurchasePassClick = onPurchasePassClick,
                 onLogVisitClick = onLogVisitClick,
                 onReportRentedClick = onReportRentedClick,
+                onCallClick = onCallClick,
+                onWhatsAppClick = onWhatsAppClick,
+                onEmailClick = onEmailClick,
                 modifier = Modifier.padding(innerPadding)
             )
         }
@@ -170,6 +198,9 @@ private fun ShopDetailBody(
     onPurchasePassClick: () -> Unit,
     onLogVisitClick: (shopId: String) -> Unit,
     onReportRentedClick: () -> Unit,
+    onCallClick: (ContactIntentData?) -> Unit,
+    onWhatsAppClick: (ContactIntentData?) -> Unit,
+    onEmailClick: (ContactIntentData?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -181,6 +212,12 @@ private fun ShopDetailBody(
     ) {
         ShopHeader(shop)
         SampleSummary(shop, showVotes = hasActivePass)
+        ContactActions(
+            shop = shop,
+            onCallClick = onCallClick,
+            onWhatsAppClick = onWhatsAppClick,
+            onEmailClick = onEmailClick
+        )
         when {
             !hasActivePass -> PaywallCard(
                 trialAvailable = trialAvailable,

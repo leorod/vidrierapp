@@ -14,6 +14,8 @@ data class Shop(
     val totalVotes: Int = 0,
     val voteBreakdown: List<Vote> = emptyList(),
     val contactAgency: String = "",
+    val contactPhone: String = "",
+    val contactEmail: String = "",
     val firstVoteAt: Long? = null,
     val lastVoteAt: Long? = null,
     val frequencyCounts: Map<ConsumptionFrequency, Int> = emptyMap(),

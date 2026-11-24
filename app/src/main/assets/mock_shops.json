@@ -30,6 +30,8 @@
       }
     ],
     "contactAgency": "Inmobiliaria Mataderos Prop.",
+    "contactPhone": "+54 11 4687-1234",
+    "contactEmail": "contacto@mataderosprop.example",
     "firstVoteAt": 1791028800000,
     "lastVoteAt": 1795359600000,
     "frequencyCounts": {
@@ -84,6 +86,8 @@
       }
     ],
     "contactAgency": "Haedo Negocios Inmobiliarios",
+    "contactPhone": "+54 11 4658-7788",
+    "contactEmail": "consultas@haedonegocios.example",
     "firstVoteAt": 1793620800000,
     "lastVoteAt": 1795082400000,
     "frequencyCounts": {
@@ -132,6 +136,8 @@
       }
     ],
     "contactAgency": "Mataderos Brokers",
+    "contactPhone": "+54 11 4687-5521",
+    "contactEmail": "info@mataderosbrokers.example",
     "firstVoteAt": 1791806400000,
     "lastVoteAt": 1795424400000,
     "frequencyCounts": {
@@ -180,6 +186,8 @@
       }
     ],
     "contactAgency": "Haedo Propiedades",
+    "contactPhone": "+54 11 4658-3090",
+    "contactEmail": "ventas@haedopropiedades.example",
     "firstVoteAt": 1793016000000,
     "lastVoteAt": 1795284000000,
     "frequencyCounts": {
