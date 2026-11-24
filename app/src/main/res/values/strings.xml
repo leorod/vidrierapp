@@ -52,6 +52,9 @@
     <string name="detail_btn_whatsapp_desc">Abrir conversación de WhatsApp con la inmobiliaria</string>
     <string name="detail_btn_email">Email</string>
     <string name="detail_btn_email_desc">Enviar correo electrónico a la inmobiliaria</string>
+    <string name="detail_contact_no_app">No hay una aplicación disponible para esta acción</string>
+    <string name="detail_whatsapp_message">Hola, consulto por el local en %1$s</string>
+    <string name="detail_email_subject">Consulta por el local en %1$s</string>
     <string name="detail_btn_log_visit">Registrar Visita Técnica</string>
     <string name="detail_btn_log_visit_desc">Iniciar relevamiento técnico y bitácora de visita para este local</string>
     <string name="detail_btn_report_rented">Reportar local alquilado</string>

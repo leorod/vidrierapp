@@ -22,6 +22,8 @@ fun ShopDto.toDomain(): Shop {
         totalVotes = totalVotes,
         voteBreakdown = votes.map { it.toDomain() },
         contactAgency = contactAgency,
+        contactPhone = contactPhone,
+        contactEmail = contactEmail,
         firstVoteAt = firstVoteAt,
         lastVoteAt = lastVoteAt,
         frequencyCounts = frequencyCounts.toEnumMap<ConsumptionFrequency>(),

@@ -27,6 +27,8 @@ class ShopMapperTest {
                 VoteDto(categoryId = "cat-1", categoryName = "Cafetería", voteCount = 20, percentage = 100f)
             ),
             contactAgency = "Inmobiliaria Test",
+            contactPhone = "+54 11 4000-0000",
+            contactEmail = "a@b.example",
             status = "SUFFICIENT"
         )
 
@@ -38,6 +40,8 @@ class ShopMapperTest {
         assertEquals("Cafetería", domain.topCategory?.name)
         assertEquals(20, domain.totalVotes)
         assertEquals("SUFFICIENT", domain.status)
+        assertEquals("+54 11 4000-0000", domain.contactPhone)
+        assertEquals("a@b.example", domain.contactEmail)
         assertEquals(1, domain.voteBreakdown.size)
     }
 
