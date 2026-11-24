@@ -1,11 +1,13 @@
 package com.vidrierapp.presentation.detail
 
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
 import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
@@ -184,5 +186,71 @@ class ShopDetailContentTest {
             .performClick()
 
         assertEquals("shop-1", clickedShopId)
+    }
+
+    private fun contactShop() = shop(totalVotes = 20).copy(
+        contactPhone = "+54 11 4687-1234",
+        contactEmail = "info@x.example"
+    )
+
+    @Test
+    fun contactButtonsDeliverIntentData() {
+        val received = mutableListOf<ContactIntentData?>()
+        composeTestRule.setContent {
+            VidrierAppTheme {
+                ShopDetailContent(
+                    uiState = ShopDetailUiState.Success(contactShop(), hasActivePass = true),
+                    onBackClick = {},
+                    onLogVisitClick = {},
+                    onReportRentedClick = {},
+                    onRetry = {},
+                    onStartTrialClick = {},
+                    onPurchasePassClick = {},
+                    onCallClick = { received += it },
+                    onWhatsAppClick = { received += it },
+                    onEmailClick = { received += it }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_call)).performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_whatsapp)).performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_email)).performClick()
+
+        assertEquals(
+            listOf(
+                ContactIntents.ACTION_DIAL,
+                ContactIntents.ACTION_VIEW,
+                ContactIntents.ACTION_SENDTO
+            ),
+            received.map { it?.action }
+        )
+        assertEquals("tel:+541146871234", received[0]?.uri)
+    }
+
+    @Test
+    fun contactButtonsStayVisibleWhenLocked() {
+        setContent(ShopDetailUiState.Success(contactShop(), hasActivePass = false))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_call)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_whatsapp)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_email)).assertIsDisplayed()
+    }
+
+    @Test
+    fun contactButtonsMeetMinimumTouchTarget() {
+        setContent(ShopDetailUiState.Success(contactShop(), hasActivePass = true))
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.detail_btn_call))
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun contactButtonsHiddenWithoutContactData() {
+        setContent(ShopDetailUiState.Success(shop(totalVotes = 20), hasActivePass = true))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_call)).assertDoesNotExist()
+        composeTestRule.onNodeWithText(context.getString(R.string.detail_btn_email)).assertDoesNotExist()
     }
 }
