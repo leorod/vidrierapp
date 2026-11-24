@@ -306,6 +306,27 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun `past visits are ordered newest first`() {
+        val older = Visit(id = "v1", shopId = "shop-1", timestamp = 1L, notes = "a")
+        val newer = Visit(id = "v2", shopId = "shop-1", timestamp = 9L, notes = "b")
+        val viewModel = createViewModel(FakeVisitRepository(shopVisits = listOf(older, newer)))
+
+        viewModel.initForShop("shop-1")
+
+        assertEquals(listOf(newer, older), viewModel.uiState.value.pastVisits)
+    }
+
+    @Test
+    fun `past visits stay empty when there is no shop`() {
+        val past = listOf(Visit(id = "v1", shopId = "shop-1", timestamp = 1L, notes = "n"))
+        val viewModel = createViewModel(FakeVisitRepository(shopVisits = past))
+
+        viewModel.initForShop(NO_SHOP_ID)
+
+        assertTrue(viewModel.uiState.value.pastVisits.isEmpty())
+    }
+
+    @Test
     fun `past visits are loaded for a known shop`() {
         val past = listOf(Visit(id = "v1", shopId = "shop-1", timestamp = 1L, notes = "n"))
         val viewModel = createViewModel(FakeVisitRepository(shopVisits = past))
