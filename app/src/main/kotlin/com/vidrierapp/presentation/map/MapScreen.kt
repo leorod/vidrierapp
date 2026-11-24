@@ -1,5 +1,10 @@
 package com.vidrierapp.presentation.map
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,7 +94,10 @@ fun MapScreen(
 
         is MapUiState.Success -> ShopsMap(
             shops = state.shops,
+            selectedShop = state.selectedShop,
             onShopSelected = viewModel::selectShop,
+            onShopDismissed = { viewModel.selectShop(null) },
+            onShopClick = onShopClick,
             modifier = modifier
         )
     }
@@ -115,7 +126,10 @@ private fun CenteredMessage(
 @Composable
 private fun ShopsMap(
     shops: List<Shop>,
+    selectedShop: Shop?,
     onShopSelected: (Shop) -> Unit,
+    onShopDismissed: () -> Unit,
+    onShopClick: (shopId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -146,10 +160,16 @@ private fun ShopsMap(
         }
     }
 
+    var lastSelectedShop by remember { mutableStateOf(selectedShop) }
+    if (selectedShop != null && selectedShop != lastSelectedShop) {
+        lastSelectedShop = selectedShop
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
+            cameraPositionState = cameraPositionState,
+            onMapClick = { onShopDismissed() }
         ) {
             shops.forEach { shop ->
                 val position = LatLng(shop.latitude, shop.longitude)
@@ -178,8 +198,23 @@ private fun ShopsMap(
                         coroutineScope.launch {
                             cameraPositionState.animate(CameraUpdateFactory.newLatLng(position))
                         }
-                        false
+                        true
                     }
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = selectedShop != null,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            lastSelectedShop?.let { previewShop ->
+                ShopPreviewCard(
+                    shop = previewShop,
+                    onViewDetailClick = { onShopClick(previewShop.id) },
+                    onDismiss = onShopDismissed,
+                    modifier = Modifier.padding(16.dp)
                 )
             }
         }
