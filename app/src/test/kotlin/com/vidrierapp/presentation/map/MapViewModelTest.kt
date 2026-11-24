@@ -1,5 +1,6 @@
 package com.vidrierapp.presentation.map
 
+import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.usecase.GetShopsUseCase
@@ -34,7 +35,7 @@ class MapViewModelTest {
             flowOf(Result.failure(UnsupportedOperationException()))
     }
 
-    private fun shop(id: String) = Shop(
+    private fun shop(id: String, category: Category? = null) = Shop(
         id = id,
         address = "address $id",
         neighborhood = "neighborhood",
@@ -42,7 +43,7 @@ class MapViewModelTest {
         longitude = -58.50,
         surfaceAreaM2 = 50,
         rentalPrice = "100",
-        topCategory = null,
+        topCategory = category,
         totalVotes = 20
     )
 
@@ -123,13 +124,15 @@ class MapViewModelTest {
     }
 
     @Test
-    fun `retry reuses the current filter`() {
-        val repository = FakeShopRepository(Result.success(emptyList()))
+    fun `retry keeps the selected category without sending it to the server`() {
+        val cafe = Category("cafe", "Cafeteria")
+        val repository = FakeShopRepository(Result.success(listOf(shop("1", cafe))))
         val viewModel = createViewModel(repository)
-        viewModel.loadShops("cafe")
+        viewModel.selectCategory("cafe")
 
         viewModel.retry()
 
-        assertEquals(listOf(null, "cafe", "cafe"), repository.requestedFilters)
+        assertEquals("cafe", (viewModel.uiState.value as MapUiState.Success).selectedCategoryFilter)
+        assertEquals(listOf<String?>(null, null), repository.requestedFilters)
     }
 }
