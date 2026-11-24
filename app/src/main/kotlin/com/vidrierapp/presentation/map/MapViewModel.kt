@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.vidrierapp.domain.location.LocationProvider
 import com.vidrierapp.domain.location.Neighborhood
 import com.vidrierapp.domain.location.NeighborhoodCatalog
+import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.domain.usecase.GetShopsUseCase
@@ -28,6 +29,7 @@ class MapViewModel(
     private var centerRequestId = 0
 
     private var currentFilter: String? = null
+    private var allShops: List<Shop> = emptyList()
 
     init {
         loadShops()
@@ -41,11 +43,14 @@ class MapViewModel(
         currentFilter = categoryFilter
         viewModelScope.launch {
             _uiState.value = MapUiState.Loading
-            getShopsUseCase(categoryFilter).collect { result ->
+            getShopsUseCase().collect { result ->
                 result.fold(
                     onSuccess = { shops ->
+                        allShops = shops
+                        val categories = deriveCategories(shops)
                         _uiState.value = MapUiState.Success(
-                            shops = shops,
+                            shops = applyFilter(shops, categoryFilter),
+                            categories = categories,
                             selectedCategoryFilter = categoryFilter
                         )
                     },
@@ -56,6 +61,27 @@ class MapViewModel(
             }
         }
     }
+
+    fun selectCategory(categoryId: String?) {
+        val current = _uiState.value as? MapUiState.Success ?: return
+        currentFilter = categoryId
+        val visible = applyFilter(allShops, categoryId)
+        _uiState.value = current.copy(
+            shops = visible,
+            selectedCategoryFilter = categoryId,
+            selectedShop = current.selectedShop?.takeIf { selected ->
+                visible.any { it.id == selected.id }
+            }
+        )
+    }
+
+    private fun applyFilter(shops: List<Shop>, categoryId: String?): List<Shop> =
+        if (categoryId == null) shops else shops.filter { it.topCategory?.id == categoryId }
+
+    private fun deriveCategories(shops: List<Shop>): List<Category> =
+        shops.mapNotNull { it.topCategory }
+            .distinctBy { it.id }
+            .sortedBy { it.name.lowercase() }
 
     fun selectShop(shop: Shop?) {
         val current = _uiState.value

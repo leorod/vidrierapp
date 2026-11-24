@@ -1,6 +1,7 @@
 package com.vidrierapp.presentation.map
 
 import com.vidrierapp.domain.location.Neighborhood
+import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.Shop
 
@@ -8,6 +9,7 @@ sealed interface MapUiState {
     data object Loading : MapUiState
     data class Success(
         val shops: List<Shop> = emptyList(),
+        val categories: List<Category> = emptyList(),
         val selectedCategoryFilter: String? = null,
         val selectedShop: Shop? = null
     ) : MapUiState
