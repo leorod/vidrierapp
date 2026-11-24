@@ -4,7 +4,7 @@
     "address": "Av. Juan Bautista Alberdi 6420",
     "neighborhood": "Mataderos",
     "latitude": -34.6525,
-    "longitude": -58.5020,
+    "longitude": -58.502,
     "surfaceAreaM2": 75,
     "rentalPrice": "$850,000 / mes",
     "topCategoryName": "Cafetería",
@@ -30,9 +30,27 @@
       }
     ],
     "contactAgency": "Inmobiliaria Mataderos Prop.",
-    "lastVoteDate": "Hace 2 días",
-    "dailyFrequencyCount": 21,
-    "morningTimeSlotPercentage": 65,
+    "firstVoteAt": 1791028800000,
+    "lastVoteAt": 1795359600000,
+    "frequencyCounts": {
+      "DIARIA": 21,
+      "SEMANAL": 9,
+      "OCASIONAL": 4
+    },
+    "votesByWeekday": {
+      "MONDAY": 6,
+      "TUESDAY": 7,
+      "WEDNESDAY": 8,
+      "THURSDAY": 7,
+      "FRIDAY": 9,
+      "SATURDAY": 13,
+      "SUNDAY": 8
+    },
+    "votesByTimeSlot": {
+      "MORNING": 38,
+      "AFTERNOON": 14,
+      "NIGHT": 6
+    },
     "status": "SUFFICIENT"
   },
   {
@@ -66,17 +84,35 @@
       }
     ],
     "contactAgency": "Haedo Negocios Inmobiliarios",
-    "lastVoteDate": "Hace 5 días",
-    "dailyFrequencyCount": 2,
-    "morningTimeSlotPercentage": 40,
+    "firstVoteAt": 1793620800000,
+    "lastVoteAt": 1795082400000,
+    "frequencyCounts": {
+      "DIARIA": 2,
+      "SEMANAL": 1,
+      "OCASIONAL": 1
+    },
+    "votesByWeekday": {
+      "MONDAY": 1,
+      "TUESDAY": 0,
+      "WEDNESDAY": 1,
+      "THURSDAY": 1,
+      "FRIDAY": 1,
+      "SATURDAY": 2,
+      "SUNDAY": 0
+    },
+    "votesByTimeSlot": {
+      "MORNING": 3,
+      "AFTERNOON": 2,
+      "NIGHT": 1
+    },
     "status": "COLLECTING"
   },
   {
     "id": "shop-mataderos-02",
     "address": "Av. Directorio 5400",
     "neighborhood": "Mataderos",
-    "latitude": -34.6480,
-    "longitude": -58.4950,
+    "latitude": -34.648,
+    "longitude": -58.495,
     "surfaceAreaM2": 90,
     "rentalPrice": "$1,100,000 / mes",
     "topCategoryName": "Verdulería",
@@ -96,17 +132,35 @@
       }
     ],
     "contactAgency": "Mataderos Brokers",
-    "lastVoteDate": "Hace 1 día",
-    "dailyFrequencyCount": 16,
-    "morningTimeSlotPercentage": 70,
+    "firstVoteAt": 1791806400000,
+    "lastVoteAt": 1795424400000,
+    "frequencyCounts": {
+      "DIARIA": 12,
+      "SEMANAL": 6,
+      "OCASIONAL": 3
+    },
+    "votesByWeekday": {
+      "MONDAY": 3,
+      "TUESDAY": 2,
+      "WEDNESDAY": 3,
+      "THURSDAY": 4,
+      "FRIDAY": 4,
+      "SATURDAY": 5,
+      "SUNDAY": 3
+    },
+    "votesByTimeSlot": {
+      "MORNING": 17,
+      "AFTERNOON": 5,
+      "NIGHT": 2
+    },
     "status": "SUFFICIENT"
   },
   {
     "id": "shop-haedo-02",
     "address": "Estrada 400",
     "neighborhood": "Haedo",
-    "latitude": -34.6400,
-    "longitude": -58.6010,
+    "latitude": -34.64,
+    "longitude": -58.601,
     "surfaceAreaM2": 60,
     "rentalPrice": "$650,000 / mes",
     "topCategoryName": "Almacén",
@@ -126,9 +180,27 @@
       }
     ],
     "contactAgency": "Haedo Propiedades",
-    "lastVoteDate": "Hace 3 días",
-    "dailyFrequencyCount": 5,
-    "morningTimeSlotPercentage": 50,
+    "firstVoteAt": 1793016000000,
+    "lastVoteAt": 1795284000000,
+    "frequencyCounts": {
+      "DIARIA": 5,
+      "SEMANAL": 2,
+      "OCASIONAL": 1
+    },
+    "votesByWeekday": {
+      "MONDAY": 1,
+      "TUESDAY": 2,
+      "WEDNESDAY": 1,
+      "THURSDAY": 1,
+      "FRIDAY": 2,
+      "SATURDAY": 3,
+      "SUNDAY": 1
+    },
+    "votesByTimeSlot": {
+      "MORNING": 5,
+      "AFTERNOON": 4,
+      "NIGHT": 2
+    },
     "status": "COLLECTING"
   }
 ]

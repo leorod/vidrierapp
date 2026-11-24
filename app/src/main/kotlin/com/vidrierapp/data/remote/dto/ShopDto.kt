@@ -15,8 +15,10 @@ data class ShopDto(
     val totalVotes: Int = 0,
     val votes: List<VoteDto> = emptyList(),
     val contactAgency: String = "",
-    val lastVoteDate: String? = null,
-    val dailyFrequencyCount: Int? = null,
-    val morningTimeSlotPercentage: Int? = null,
+    val firstVoteAt: Long? = null,
+    val lastVoteAt: Long? = null,
+    val frequencyCounts: Map<String, Int> = emptyMap(),
+    val votesByWeekday: Map<String, Int> = emptyMap(),
+    val votesByTimeSlot: Map<String, Int> = emptyMap(),
     val status: String? = null
 )

@@ -3,8 +3,11 @@ package com.vidrierapp.data.mapper
 import com.vidrierapp.data.remote.dto.ShopDto
 import com.vidrierapp.data.remote.dto.VoteDto
 import com.vidrierapp.domain.model.Category
+import com.vidrierapp.domain.model.ConsumptionFrequency
 import com.vidrierapp.domain.model.Shop
+import com.vidrierapp.domain.model.TimeSlot
 import com.vidrierapp.domain.model.Vote
+import com.vidrierapp.domain.model.Weekday
 
 fun ShopDto.toDomain(): Shop {
     return Shop(
@@ -19,9 +22,11 @@ fun ShopDto.toDomain(): Shop {
         totalVotes = totalVotes,
         voteBreakdown = votes.map { it.toDomain() },
         contactAgency = contactAgency,
-        lastVoteDate = lastVoteDate,
-        dailyFrequencyCount = dailyFrequencyCount,
-        morningTimeSlotPercentage = morningTimeSlotPercentage,
+        firstVoteAt = firstVoteAt,
+        lastVoteAt = lastVoteAt,
+        frequencyCounts = frequencyCounts.toEnumMap<ConsumptionFrequency>(),
+        votesByWeekday = votesByWeekday.toEnumMap<Weekday>(),
+        votesByTimeSlot = votesByTimeSlot.toEnumMap<TimeSlot>(),
         status = status
     )
 }
@@ -33,3 +38,8 @@ fun VoteDto.toDomain(): Vote {
         percentage = percentage
     )
 }
+
+private inline fun <reified E : Enum<E>> Map<String, Int>.toEnumMap(): Map<E, Int> =
+    entries.mapNotNull { (key, count) ->
+        enumValues<E>().firstOrNull { it.name == key }?.let { it to count }
+    }.toMap()

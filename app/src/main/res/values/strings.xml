@@ -46,6 +46,28 @@
     <string name="detail_btn_email_desc">Enviar correo electrónico a la inmobiliaria</string>
     <string name="detail_btn_log_visit">Registrar Visita Técnica</string>
     <string name="detail_btn_log_visit_desc">Iniciar relevamiento técnico y bitácora de visita para este local</string>
+    <string name="detail_btn_report_rented">Reportar local alquilado</string>
+    <string name="detail_sample_votes">%1$d votos acumulados</string>
+    <string name="detail_sample_last_vote">Último voto %1$s</string>
+    <string name="detail_sample_active_since">Activo desde %1$s</string>
+    <string name="detail_sample_insufficient">Muestra insuficiente en recolección (%1$d/%2$d votos mínimos)</string>
+    <string name="detail_category_bar_desc">%1$s: %2$d votos, %3$.1f%% del total</string>
+    <string name="detail_freq_daily">%1$d de %2$d visitarían a diario</string>
+    <string name="detail_freq_weekly">%1$d de %2$d visitarían semanalmente</string>
+    <string name="detail_freq_occasional">%1$d de %2$d visitarían ocasionalmente</string>
+    <string name="detail_section_weekday">Votos por día de la semana</string>
+    <string name="detail_section_time_slot">Votos por franja horaria</string>
+    <string name="detail_distribution_bar_desc">%1$s: %2$d votos</string>
+    <string name="weekday_monday">Lun</string>
+    <string name="weekday_tuesday">Mar</string>
+    <string name="weekday_wednesday">Mié</string>
+    <string name="weekday_thursday">Jue</string>
+    <string name="weekday_friday">Vie</string>
+    <string name="weekday_saturday">Sáb</string>
+    <string name="weekday_sunday">Dom</string>
+    <string name="time_slot_morning">Mañana</string>
+    <string name="time_slot_afternoon">Tarde</string>
+    <string name="time_slot_night">Noche</string>
 
     <!-- Bloqueo y Pases (RNF-06, RNF-07) -->
     <string name="pass_trial_active">Período de prueba activo: %1$d días restantes</string>
