@@ -53,6 +53,11 @@
 * **Decisión:** Implementar transformadores explícitos (*Mappers*) entre las entidades de red (`ShopDto`), almacenamiento local (`VisitEntity`) y los modelos puros de Dominio (`Shop`, `Visit`).
 * **Motivación:** Prevenir la propagación de cambios en las respuestas JSON de las API o esquemas de base de datos hacia la interfaz de usuario y la lógica de negocio.
 
+### 2.4. Creación de ViewModels y Navegación Inferior
+
+* **Decisión:** (a) Todos los ViewModels se crean con una única factory, `AppViewModelProvider.Factory` (`viewModelFactory { initializer { ... } }`), que obtiene los UseCases de `AppContainer` vía `VidrierAppApplication.container`; las pantallas la usan con `viewModel(factory = AppViewModelProvider.Factory)`. (b) La barra inferior tiene dos pestañas de nivel superior, "Explorar" (`MapDestination`) y "Bitácora" (`VisitsHubDestination`), visibles solo cuando el tope del back stack es una de ellas; al cambiar de pestaña se reemplaza el back stack por ese único destino. (c) El FAB "Nueva visita" abre `LogVisitDestination` con `shopId` vacío (`NO_SHOP_ID`) hasta que VIS-03 agregue `shopId` nulo y dirección manual.
+* **Motivación:** (a) Definir el patrón una sola vez, sin Hilt ni Koin, para que todas las pantallas lo reutilicen. (b) Es lo más simple: un único back stack sin estado por pestaña, y el detalle o el registro de visita ocultan la barra. (c) Permite entregar el flujo de la bitácora sin bloquear NAV-01 por VIS-03.
+
 ---
 
 ## 3. Decisiones de Backend y Procesamiento de Datos
