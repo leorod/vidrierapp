@@ -57,7 +57,7 @@ class MapViewModelTest {
     }
 
     private fun createViewModel(repository: FakeShopRepository) =
-        MapViewModel(GetShopsUseCase(repository))
+        MapViewModel(GetShopsUseCase(repository), FakeLocationProvider(null))
 
     @Test
     fun `loads shops on init`() {

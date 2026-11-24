@@ -5,11 +5,13 @@ import androidx.room.Room
 import com.vidrierapp.data.local.database.MIGRATION_1_2
 import com.vidrierapp.data.local.database.MIGRATION_2_3
 import com.vidrierapp.data.local.database.VidrierAppDatabase
+import com.vidrierapp.data.location.FusedLocationProvider
 import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
 import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
 import com.vidrierapp.data.repository.SharedPreferencesPassRepository
+import com.vidrierapp.domain.location.LocationProvider
 import com.vidrierapp.domain.repository.CachedShopRepository
 import com.vidrierapp.domain.repository.PassRepository
 import com.vidrierapp.domain.repository.ShopRepository
@@ -93,6 +95,10 @@ class AppContainer(private val context: Context) {
 
     val visitRepository: VisitRepository by lazy {
         RoomVisitRepository(database.visitDao())
+    }
+
+    val locationProvider: LocationProvider by lazy {
+        FusedLocationProvider(context.applicationContext)
     }
 
     private val clock: () -> Long = System::currentTimeMillis
