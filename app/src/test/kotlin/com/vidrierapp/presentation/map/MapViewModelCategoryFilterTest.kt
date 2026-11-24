@@ -28,6 +28,9 @@ class MapViewModelCategoryFilterTest {
             return flowOf(Result.success(shops))
         }
 
+        override suspend fun reportRented(shopId: String): Result<Unit> =
+            Result.failure(UnsupportedOperationException())
+
         override fun getShopDetail(shopId: String): Flow<Result<Shop>> =
             flowOf(Result.failure(UnsupportedOperationException()))
     }
@@ -152,6 +155,9 @@ class MapViewModelCategoryFilterTest {
             GetShopsUseCase(object : ShopRepository {
                 override fun getShops(categoryFilter: String?): Flow<Result<List<Shop>>> =
                     flowOf(Result.failure(IllegalStateException("boom")))
+
+                override suspend fun reportRented(shopId: String): Result<Unit> =
+                    Result.failure(UnsupportedOperationException())
 
                 override fun getShopDetail(shopId: String): Flow<Result<Shop>> =
                     flowOf(Result.failure(UnsupportedOperationException()))

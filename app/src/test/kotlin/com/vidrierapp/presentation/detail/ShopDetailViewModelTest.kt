@@ -5,6 +5,9 @@ import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.model.PASS_DURATION_MILLIS
 import com.vidrierapp.domain.model.PassState
 import com.vidrierapp.domain.usecase.FakePassRepository
+import com.vidrierapp.domain.usecase.FakeReportedShopsRepository
+import com.vidrierapp.domain.usecase.ObserveReportedShopsUseCase
+import com.vidrierapp.domain.usecase.ReportRentedUseCase
 import com.vidrierapp.domain.usecase.GetShopDetailUseCase
 import com.vidrierapp.domain.usecase.ObservePassAccessUseCase
 import com.vidrierapp.domain.usecase.PurchasePassUseCase
@@ -14,6 +17,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -30,6 +36,13 @@ class ShopDetailViewModelTest {
         var result: Result<Shop> = Result.failure(IllegalStateException())
         val requestedIds = mutableListOf<String>()
         val flowsById = mutableMapOf<String, MutableSharedFlow<Result<Shop>>>()
+        var reportResult: Result<Unit> = Result.success(Unit)
+        val reportedIds = mutableListOf<String>()
+
+        override suspend fun reportRented(shopId: String): Result<Unit> {
+            reportedIds.add(shopId)
+            return reportResult
+        }
 
         override fun getShops(categoryFilter: String?): Flow<Result<List<Shop>>> =
             flowOf(Result.failure(UnsupportedOperationException()))
@@ -43,11 +56,15 @@ class ShopDetailViewModelTest {
     private var now = 1_000L
     private val passRepository = FakePassRepository(PassState(trialStartedAt = 0L))
 
+    private val reportedShops = FakeReportedShopsRepository()
+
     private fun viewModel(repository: ShopRepository) = ShopDetailViewModel(
         getShopDetailUseCase = GetShopDetailUseCase(repository),
         observePassAccessUseCase = ObservePassAccessUseCase(passRepository) { now },
         startTrialUseCase = StartTrialUseCase(passRepository) { now },
-        purchasePassUseCase = PurchasePassUseCase(passRepository) { now }
+        purchasePassUseCase = PurchasePassUseCase(passRepository) { now },
+        reportRentedUseCase = ReportRentedUseCase(repository, reportedShops),
+        observeReportedShopsUseCase = ObserveReportedShopsUseCase(reportedShops)
     )
 
     private fun shop(id: String) = Shop(
@@ -69,6 +86,7 @@ class ShopDetailViewModelTest {
 
     @After
     fun tearDown() {
+        collectors.forEach { it.cancel() }
         Dispatchers.resetMain()
     }
 
@@ -206,5 +224,99 @@ class ShopDetailViewModelTest {
             viewModel.uiState.value
         )
         assertEquals(now + PASS_DURATION_MILLIS, passRepository.state.value.passExpiresAt)
+    }
+
+    private val collectors = mutableListOf<kotlinx.coroutines.Job>()
+
+    private fun collectFeedback(viewModel: ShopDetailViewModel): List<ReportRentedFeedback> {
+        val events = mutableListOf<ReportRentedFeedback>()
+        collectors += CoroutineScope(Dispatchers.Main).launch {
+            viewModel.feedback.collect { events.add(it) }
+        }
+        return events
+    }
+
+    @Test
+    fun `report click opens the dialog and dismiss closes it`() {
+        val viewModel = viewModel(FakeShopRepository())
+        viewModel.loadShop("1")
+
+        viewModel.onReportRentedClick()
+        assertTrue(viewModel.reportState.value.isDialogVisible)
+
+        viewModel.dismissReportDialog()
+        assertEquals(ReportRentedUiState(), viewModel.reportState.value)
+    }
+
+    @Test
+    fun `confirming a report closes the dialog emits success and disables the button`() {
+        val repository = FakeShopRepository()
+        val viewModel = viewModel(repository)
+        val events = collectFeedback(viewModel)
+        viewModel.loadShop("1")
+        viewModel.onReportRentedClick()
+
+        viewModel.confirmReportRented()
+
+        assertEquals(listOf("1"), repository.reportedIds)
+        assertEquals(listOf(ReportRentedFeedback.Success), events)
+        assertEquals(
+            ReportRentedUiState(isDialogVisible = false, isSubmitting = false, alreadyReported = true),
+            viewModel.reportState.value
+        )
+    }
+
+    @Test
+    fun `failed report emits failure keeps the button enabled and can be retried`() {
+        val repository = FakeShopRepository().apply {
+            reportResult = Result.failure(IllegalStateException("boom"))
+        }
+        val viewModel = viewModel(repository)
+        val events = collectFeedback(viewModel)
+        viewModel.loadShop("1")
+
+        viewModel.confirmReportRented()
+        assertEquals(listOf(ReportRentedFeedback.Failure), events)
+        assertEquals(false, viewModel.reportState.value.alreadyReported)
+
+        repository.reportResult = Result.success(Unit)
+        viewModel.confirmReportRented()
+
+        assertEquals(listOf(ReportRentedFeedback.Failure, ReportRentedFeedback.Success), events)
+        assertEquals(listOf("1", "1"), repository.reportedIds)
+        assertTrue(viewModel.reportState.value.alreadyReported)
+    }
+
+    @Test
+    fun `report click on an already reported shop emits already reported and no dialog`() {
+        runBlocking { reportedShops.markReported("1") }
+        val viewModel = viewModel(FakeShopRepository())
+        val events = collectFeedback(viewModel)
+        viewModel.loadShop("1")
+
+        viewModel.onReportRentedClick()
+
+        assertEquals(listOf(ReportRentedFeedback.AlreadyReported), events)
+        assertEquals(false, viewModel.reportState.value.isDialogVisible)
+        assertTrue(viewModel.reportState.value.alreadyReported)
+    }
+
+    @Test
+    fun `a report of another shop does not disable this one`() {
+        reportedShops.state.value = setOf("2")
+        val viewModel = viewModel(FakeShopRepository())
+        viewModel.loadShop("1")
+
+        assertEquals(false, viewModel.reportState.value.alreadyReported)
+    }
+
+    @Test
+    fun `confirm without a loaded shop does nothing`() {
+        val repository = FakeShopRepository()
+        val viewModel = viewModel(repository)
+
+        viewModel.confirmReportRented()
+
+        assertTrue(repository.reportedIds.isEmpty())
     }
 }

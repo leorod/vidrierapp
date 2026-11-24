@@ -29,6 +29,9 @@ class MapViewModelLocationTest {
         override fun getShops(categoryFilter: String?): Flow<Result<List<Shop>>> =
             flowOf(Result.success(emptyList()))
 
+        override suspend fun reportRented(shopId: String): Result<Unit> =
+            Result.failure(UnsupportedOperationException())
+
         override fun getShopDetail(shopId: String): Flow<Result<Shop>> =
             flowOf(Result.failure(UnsupportedOperationException()))
     }

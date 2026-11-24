@@ -31,6 +31,9 @@ class MapViewModelTest {
             return flowOf(result)
         }
 
+        override suspend fun reportRented(shopId: String): Result<Unit> =
+            Result.failure(UnsupportedOperationException())
+
         override fun getShopDetail(shopId: String): Flow<Result<Shop>> =
             flowOf(Result.failure(UnsupportedOperationException()))
     }
