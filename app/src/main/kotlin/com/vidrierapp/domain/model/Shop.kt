@@ -1,5 +1,7 @@
 package com.vidrierapp.domain.model
 
+const val MIN_VOTES_FOR_METRICS = 15
+
 data class Shop(
     val id: String,
     val address: String,
@@ -16,4 +18,6 @@ data class Shop(
     val dailyFrequencyCount: Int? = null,
     val morningTimeSlotPercentage: Int? = null,
     val status: String? = null
-)
+) {
+    val isSampleSufficient: Boolean get() = totalVotes >= MIN_VOTES_FOR_METRICS
+}
