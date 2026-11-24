@@ -25,6 +25,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -37,17 +39,38 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vidrierapp.R
 import com.vidrierapp.domain.model.Visit
 import com.vidrierapp.presentation.common.AppViewModelProvider
-import java.text.DateFormat
-import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyVisitsHubScreen(
     onNewVisitClick: () -> Unit,
+    onSavedShopClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MyVisitsHubViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.loadVisits()
+        onPauseOrDispose { }
+    }
+    MyVisitsHubContent(
+        uiState = uiState,
+        onNewVisitClick = onNewVisitClick,
+        onSavedShopClick = onSavedShopClick,
+        onRetryClick = viewModel::loadVisits,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyVisitsHubContent(
+    uiState: MyVisitsHubUiState,
+    onNewVisitClick: () -> Unit,
+    onSavedShopClick: (String) -> Unit,
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val fabDescription = stringResource(R.string.hub_fab_desc)
 
     Scaffold(
@@ -85,36 +108,94 @@ fun MyVisitsHubScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
                 Button(
-                    onClick = viewModel::loadVisits,
+                    onClick = onRetryClick,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(text = stringResource(R.string.action_retry))
                 }
             }
 
-            is MyVisitsHubUiState.Success -> if (state.visits.isEmpty()) {
-                CenteredContent(innerPadding) {
-                    Text(
-                        text = stringResource(R.string.hub_empty),
-                        textAlign = TextAlign.Center
-                    )
+            is MyVisitsHubUiState.Success -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = innerPadding.calculateTopPadding() + 8.dp,
+                    end = 16.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 88.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item(key = "visits_header") {
+                    SectionTitle(text = stringResource(R.string.hub_visits_section))
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = innerPadding.calculateTopPadding() + 8.dp,
-                        end = 16.dp,
-                        bottom = innerPadding.calculateBottomPadding() + 88.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.visits, key = { it.id }) { visit ->
-                        VisitCard(visit = visit)
+                if (state.visits.isEmpty()) {
+                    item(key = "visits_empty") {
+                        Text(
+                            text = stringResource(R.string.hub_empty),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    items(state.visits, key = { "visit_" + it.id }) { visit ->
+                        VisitCard(
+                            visit = visit,
+                            shopName = visit.shopId?.let { state.shopNames[it] }
+                        )
+                    }
+                }
+                item(key = "saved_header") {
+                    SectionTitle(text = stringResource(R.string.hub_saved_shops_section))
+                }
+                if (state.savedShops.isEmpty()) {
+                    item(key = "saved_empty") {
+                        Text(
+                            text = stringResource(R.string.hub_saved_shops_empty),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    items(state.savedShops, key = { "saved_" + it.shopId }) { item ->
+                        SavedShopCard(item = item, onClick = { onSavedShopClick(item.shopId) })
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.semantics { heading() }
+    )
+}
+
+@Composable
+private fun SavedShopCard(item: SavedShopItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.hub_saved_shop_desc, item.address)
+    val age = if (item.daysAgo == 0) {
+        stringResource(R.string.hub_saved_today)
+    } else {
+        pluralStringResource(R.plurals.hub_saved_days_ago, item.daysAgo, item.daysAgo)
+    }
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .semantics { contentDescription = description }
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(text = item.address, style = MaterialTheme.typography.titleMedium)
+            if (item.neighborhood.isNotBlank()) {
+                Text(text = item.neighborhood, style = MaterialTheme.typography.bodyMedium)
+            }
+            Text(text = age, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -138,10 +219,8 @@ private fun CenteredContent(
 }
 
 @Composable
-private fun VisitCard(visit: Visit, modifier: Modifier = Modifier) {
-    val formattedDate = DateFormat
-        .getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-        .format(Date(visit.timestamp))
+private fun VisitCard(visit: Visit, shopName: String?, modifier: Modifier = Modifier) {
+    val formattedDate = formatVisitDate(visit.timestamp)
 
     val galleryDescription = stringResource(R.string.hub_photos_gallery_desc)
 
@@ -153,7 +232,10 @@ private fun VisitCard(visit: Visit, modifier: Modifier = Modifier) {
             Text(text = formattedDate, style = MaterialTheme.typography.titleMedium)
             if (!visit.shopId.isNullOrBlank()) {
                 Text(
-                    text = stringResource(R.string.visit_shop_target, visit.shopId),
+                    text = stringResource(
+                        R.string.visit_shop_target,
+                        shopName ?: stringResource(R.string.hub_visit_shop_unknown)
+                    ),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

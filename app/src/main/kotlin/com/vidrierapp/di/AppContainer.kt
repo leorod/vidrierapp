@@ -108,7 +108,7 @@ class AppContainer(private val context: Context) {
         FusedLocationProvider(context.applicationContext)
     }
 
-    private val clock: () -> Long = System::currentTimeMillis
+    val clock: () -> Long = System::currentTimeMillis
 
     val passRepository: PassRepository by lazy {
         SharedPreferencesPassRepository(
