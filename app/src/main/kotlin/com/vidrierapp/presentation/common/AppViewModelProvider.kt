@@ -25,7 +25,8 @@ object AppViewModelProvider {
             VisitViewModel(
                 savedStateHandle = createSavedStateHandle(),
                 logVisitUseCase = container().logVisitUseCase,
-                getVisitsUseCase = container().getVisitsUseCase
+                getVisitsUseCase = container().getVisitsUseCase,
+                photoStorage = container().photoStorage
             )
         }
         initializer { MyVisitsHubViewModel(container().getAllVisitsUseCase) }
