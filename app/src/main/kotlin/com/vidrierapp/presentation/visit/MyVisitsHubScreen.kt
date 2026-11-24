@@ -27,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -161,7 +162,7 @@ private fun VisitCard(visit: Visit, modifier: Modifier = Modifier) {
                 )
             }
             Text(
-                text = stringResource(R.string.visit_pedestrian_count, visit.pedestrianCount),
+                text = pluralStringResource(R.plurals.visit_pedestrian_count, visit.pedestrianCount, visit.pedestrianCount),
                 style = MaterialTheme.typography.bodyMedium
             )
             if (visit.notes.isNotBlank()) {
