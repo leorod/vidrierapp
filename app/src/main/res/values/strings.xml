@@ -6,6 +6,8 @@
     <string name="nav_map">Mapa</string>
     <string name="nav_detail">Ficha del Local</string>
     <string name="nav_log_visit">Bitácora de Visita</string>
+    <string name="nav_explore">Explorar</string>
+    <string name="nav_visits">Bitácora</string>
     <string name="action_back">Volver</string>
     <string name="action_close">Cerrar</string>
     <string name="action_save">Guardar</string>
@@ -69,6 +71,11 @@
     <string name="visit_save_success">Visita técnica registrada con éxito en tu bitácora local.</string>
     <string name="visit_list_title">Visitas Registradas a este Local</string>
     <string name="visit_no_entries">Aún no registraste visitas técnicas para este local.</string>
+
+    <string name="hub_title">Mis Visitas</string>
+    <string name="hub_empty">Todavía no registraste visitas. Tocá "Nueva visita" para empezar tu bitácora.</string>
+    <string name="hub_fab_label">Nueva visita</string>
+    <string name="hub_fab_desc">Registrar una nueva visita técnica</string>
 
     <!-- Estados de Error, Carga y Offline (RNF-12) -->
     <string name="status_loading">Cargando información de demanda...</string>

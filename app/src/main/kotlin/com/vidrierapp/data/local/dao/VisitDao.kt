@@ -12,6 +12,9 @@ interface VisitDao {
     @Query("SELECT * FROM visits WHERE shopId = :shopId ORDER BY timestamp DESC")
     fun getVisitsForShop(shopId: String): Flow<List<VisitEntity>>
 
+    @Query("SELECT * FROM visits ORDER BY timestamp DESC")
+    fun getAllVisits(): Flow<List<VisitEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVisit(visit: VisitEntity)
 }

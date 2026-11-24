@@ -11,3 +11,8 @@ data class ShopDetailDestination(val shopId: String) : NavKey
 
 @Serializable
 data class LogVisitDestination(val shopId: String) : NavKey
+
+@Serializable
+data object VisitsHubDestination : NavKey
+
+const val NO_SHOP_ID = ""
