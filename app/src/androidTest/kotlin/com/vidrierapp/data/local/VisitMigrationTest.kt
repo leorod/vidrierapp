@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.vidrierapp.data.local.database.MIGRATION_1_2
+import com.vidrierapp.data.local.database.MIGRATION_2_3
 import com.vidrierapp.data.local.database.VidrierAppDatabase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -39,7 +40,7 @@ class VisitMigrationTest {
         }
 
         val database = Room.databaseBuilder(context, VidrierAppDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
         val visits = runBlocking { database.visitDao().getAllVisits().first() }
         database.close()
