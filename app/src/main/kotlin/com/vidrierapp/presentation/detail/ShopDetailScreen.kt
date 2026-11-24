@@ -61,6 +61,8 @@ fun ShopDetailScreen(
         onLogVisitClick = onLogVisitClick,
         onReportRentedClick = onReportRentedClick,
         onRetry = viewModel::retry,
+        onStartTrialClick = viewModel::startTrial,
+        onPurchasePassClick = viewModel::purchasePass,
         modifier = modifier
     )
 }
@@ -73,6 +75,8 @@ fun ShopDetailContent(
     onLogVisitClick: (shopId: String) -> Unit,
     onReportRentedClick: () -> Unit,
     onRetry: () -> Unit,
+    onStartTrialClick: () -> Unit,
+    onPurchasePassClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -126,6 +130,9 @@ fun ShopDetailContent(
             is ShopDetailUiState.Success -> ShopDetailBody(
                 shop = uiState.shop,
                 hasActivePass = uiState.hasActivePass,
+                trialAvailable = uiState.trialAvailable,
+                onStartTrialClick = onStartTrialClick,
+                onPurchasePassClick = onPurchasePassClick,
                 onLogVisitClick = onLogVisitClick,
                 onReportRentedClick = onReportRentedClick,
                 modifier = Modifier.padding(innerPadding)
@@ -158,6 +165,9 @@ private fun CenteredColumn(
 private fun ShopDetailBody(
     shop: Shop,
     hasActivePass: Boolean,
+    trialAvailable: Boolean,
+    onStartTrialClick: () -> Unit,
+    onPurchasePassClick: () -> Unit,
     onLogVisitClick: (shopId: String) -> Unit,
     onReportRentedClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -170,11 +180,12 @@ private fun ShopDetailBody(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         ShopHeader(shop)
-        SampleSummary(shop)
+        SampleSummary(shop, showVotes = hasActivePass)
         when {
-            !hasActivePass -> InfoCard(
-                title = stringResource(R.string.pass_locked_title),
-                message = stringResource(R.string.pass_locked_description)
+            !hasActivePass -> PaywallCard(
+                trialAvailable = trialAvailable,
+                onStartTrialClick = onStartTrialClick,
+                onPurchasePassClick = onPurchasePassClick
             )
 
             !shop.isSampleSufficient -> InfoCard(

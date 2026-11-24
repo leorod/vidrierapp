@@ -40,7 +40,9 @@ class ShopDetailContentTest {
 
     private fun setContent(
         state: ShopDetailUiState,
-        onLogVisitClick: (String) -> Unit = {}
+        onLogVisitClick: (String) -> Unit = {},
+        onStartTrialClick: () -> Unit = {},
+        onPurchasePassClick: () -> Unit = {}
     ) {
         composeTestRule.setContent {
             VidrierAppTheme {
@@ -49,7 +51,9 @@ class ShopDetailContentTest {
                     onBackClick = {},
                     onLogVisitClick = onLogVisitClick,
                     onReportRentedClick = {},
-                    onRetry = {}
+                    onRetry = {},
+                    onStartTrialClick = onStartTrialClick,
+                    onPurchasePassClick = onPurchasePassClick
                 )
             }
         }
@@ -88,6 +92,82 @@ class ShopDetailContentTest {
         composeTestRule
             .onNodeWithText(context.getString(R.string.detail_votes_breakdown))
             .assertDoesNotExist()
+    }
+
+    @Test
+    fun lockedFichaKeepsQualitativeInfoAndHidesVoteCount() {
+        setContent(ShopDetailUiState.Success(shop(totalVotes = 20), hasActivePass = false))
+
+        composeTestRule.onNodeWithText("Av. Rivadavia 1000").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Haedo").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.detail_sample_votes, 20))
+            .assertDoesNotExist()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.pass_simulation_notice))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun unlockedFichaShowsVoteCountAndNoPaywall() {
+        setContent(ShopDetailUiState.Success(shop(totalVotes = 20), hasActivePass = true))
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.detail_sample_votes, 20))
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.pass_locked_title))
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun startTrialButtonInvokesCallback() {
+        var clicks = 0
+        setContent(
+            ShopDetailUiState.Success(shop(totalVotes = 20), hasActivePass = false),
+            onStartTrialClick = { clicks++ }
+        )
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.pass_btn_start_trial))
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(1, clicks)
+    }
+
+    @Test
+    fun purchaseButtonInvokesCallback() {
+        var clicks = 0
+        setContent(
+            ShopDetailUiState.Success(shop(totalVotes = 20), hasActivePass = false),
+            onPurchasePassClick = { clicks++ }
+        )
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.pass_btn_activate))
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(1, clicks)
+    }
+
+    @Test
+    fun trialButtonIsHiddenWhenTrialAlreadyUsed() {
+        setContent(
+            ShopDetailUiState.Success(
+                shop(totalVotes = 20),
+                hasActivePass = false,
+                trialAvailable = false
+            )
+        )
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.pass_btn_start_trial))
+            .assertDoesNotExist()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.pass_btn_activate))
+            .assertIsDisplayed()
     }
 
     @Test
