@@ -15,7 +15,12 @@ import com.vidrierapp.presentation.visit.VisitViewModel
 object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer { MapViewModel(container().getShopsUseCase, container().locationProvider) }
-        initializer { ShopDetailViewModel(container().getShopDetailUseCase) }
+        initializer { ShopDetailViewModel(
+                getShopDetailUseCase = container().getShopDetailUseCase,
+                observePassAccessUseCase = container().observePassAccessUseCase,
+                startTrialUseCase = container().startTrialUseCase,
+                purchasePassUseCase = container().purchasePassUseCase
+            ) }
         initializer {
             VisitViewModel(
                 savedStateHandle = createSavedStateHandle(),

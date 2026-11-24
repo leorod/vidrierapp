@@ -6,7 +6,8 @@ sealed interface ShopDetailUiState {
     data object Loading : ShopDetailUiState
     data class Success(
         val shop: Shop,
-        val hasActivePass: Boolean = false
+        val hasActivePass: Boolean = false,
+        val trialAvailable: Boolean = true
     ) : ShopDetailUiState
     data class Error(val message: String) : ShopDetailUiState
 }

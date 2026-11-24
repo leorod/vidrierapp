@@ -55,11 +55,11 @@ internal fun ShopHeader(shop: Shop) {
 }
 
 @Composable
-internal fun SampleSummary(shop: Shop) {
+internal fun SampleSummary(shop: Shop, showVotes: Boolean) {
     val context = LocalContext.current
     val now = remember { System.currentTimeMillis() }
     val parts = buildList {
-        add(stringResource(R.string.detail_sample_votes, shop.totalVotes))
+        if (showVotes) add(stringResource(R.string.detail_sample_votes, shop.totalVotes))
         shop.lastVoteAt?.let { lastVoteAt ->
             val relative = DateUtils.getRelativeTimeSpanString(
                 lastVoteAt,
@@ -80,10 +80,12 @@ internal fun SampleSummary(shop: Shop) {
             add(stringResource(R.string.detail_sample_active_since, month))
         }
     }
-    Text(
-        text = parts.joinToString(" · "),
-        style = MaterialTheme.typography.titleMedium
-    )
+    if (parts.isNotEmpty()) {
+        Text(
+            text = parts.joinToString(" · "),
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
 }
 
 @Composable

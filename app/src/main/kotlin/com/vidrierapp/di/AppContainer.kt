@@ -10,8 +10,10 @@ import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
 import com.vidrierapp.data.repository.RetrofitShopRepository
 import com.vidrierapp.data.repository.RoomVisitRepository
+import com.vidrierapp.data.repository.SharedPreferencesPassRepository
 import com.vidrierapp.domain.location.LocationProvider
 import com.vidrierapp.domain.repository.CachedShopRepository
+import com.vidrierapp.domain.repository.PassRepository
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.repository.VisitRepository
 import com.vidrierapp.domain.usecase.GetAllVisitsUseCase
@@ -20,6 +22,9 @@ import com.vidrierapp.domain.usecase.GetShopDetailUseCase
 import com.vidrierapp.domain.usecase.GetShopsUseCase
 import com.vidrierapp.domain.usecase.GetVisitsUseCase
 import com.vidrierapp.domain.usecase.LogVisitUseCase
+import com.vidrierapp.domain.usecase.ObservePassAccessUseCase
+import com.vidrierapp.domain.usecase.PurchasePassUseCase
+import com.vidrierapp.domain.usecase.StartTrialUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -94,6 +99,26 @@ class AppContainer(private val context: Context) {
 
     val locationProvider: LocationProvider by lazy {
         FusedLocationProvider(context.applicationContext)
+    }
+
+    private val clock: () -> Long = System::currentTimeMillis
+
+    val passRepository: PassRepository by lazy {
+        SharedPreferencesPassRepository(
+            context.applicationContext.getSharedPreferences("pass_state", Context.MODE_PRIVATE)
+        )
+    }
+
+    val observePassAccessUseCase: ObservePassAccessUseCase by lazy {
+        ObservePassAccessUseCase(passRepository, clock)
+    }
+
+    val startTrialUseCase: StartTrialUseCase by lazy {
+        StartTrialUseCase(passRepository, clock)
+    }
+
+    val purchasePassUseCase: PurchasePassUseCase by lazy {
+        PurchasePassUseCase(passRepository, clock)
     }
 
     val getShopsUseCase: GetShopsUseCase by lazy {

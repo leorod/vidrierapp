@@ -2,7 +2,13 @@ package com.vidrierapp.presentation.detail
 
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.domain.repository.ShopRepository
+import com.vidrierapp.domain.model.PASS_DURATION_MILLIS
+import com.vidrierapp.domain.model.PassState
+import com.vidrierapp.domain.usecase.FakePassRepository
 import com.vidrierapp.domain.usecase.GetShopDetailUseCase
+import com.vidrierapp.domain.usecase.ObservePassAccessUseCase
+import com.vidrierapp.domain.usecase.PurchasePassUseCase
+import com.vidrierapp.domain.usecase.StartTrialUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -34,6 +40,16 @@ class ShopDetailViewModelTest {
         }
     }
 
+    private var now = 1_000L
+    private val passRepository = FakePassRepository(PassState(trialStartedAt = 0L))
+
+    private fun viewModel(repository: ShopRepository) = ShopDetailViewModel(
+        getShopDetailUseCase = GetShopDetailUseCase(repository),
+        observePassAccessUseCase = ObservePassAccessUseCase(passRepository) { now },
+        startTrialUseCase = StartTrialUseCase(passRepository) { now },
+        purchasePassUseCase = PurchasePassUseCase(passRepository) { now }
+    )
+
     private fun shop(id: String) = Shop(
         id = id,
         address = "address $id",
@@ -59,12 +75,12 @@ class ShopDetailViewModelTest {
     @Test
     fun `loadShop emits Success with active pass`() {
         val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }
-        val viewModel = ShopDetailViewModel(GetShopDetailUseCase(repository))
+        val viewModel = viewModel(repository)
 
         viewModel.loadShop("1")
 
         assertEquals(
-            ShopDetailUiState.Success(shop = shop("1"), hasActivePass = true),
+            ShopDetailUiState.Success(shop = shop("1"), hasActivePass = true, trialAvailable = false),
             viewModel.uiState.value
         )
     }
@@ -74,7 +90,7 @@ class ShopDetailViewModelTest {
         val repository = FakeShopRepository().apply {
             result = Result.failure(IllegalStateException("boom"))
         }
-        val viewModel = ShopDetailViewModel(GetShopDetailUseCase(repository))
+        val viewModel = viewModel(repository)
 
         viewModel.loadShop("1")
 
@@ -86,7 +102,7 @@ class ShopDetailViewModelTest {
         val repository = FakeShopRepository().apply {
             result = Result.failure(IllegalStateException("boom"))
         }
-        val viewModel = ShopDetailViewModel(GetShopDetailUseCase(repository))
+        val viewModel = viewModel(repository)
         viewModel.loadShop("1")
 
         repository.result = Result.success(shop("1"))
@@ -99,7 +115,7 @@ class ShopDetailViewModelTest {
     @Test
     fun `retry without a previous load does nothing`() {
         val repository = FakeShopRepository()
-        val viewModel = ShopDetailViewModel(GetShopDetailUseCase(repository))
+        val viewModel = viewModel(repository)
 
         viewModel.retry()
 
@@ -115,7 +131,7 @@ class ShopDetailViewModelTest {
             flowsById["1"] = first
             flowsById["2"] = second
         }
-        val viewModel = ShopDetailViewModel(GetShopDetailUseCase(repository))
+        val viewModel = viewModel(repository)
 
         viewModel.loadShop("1")
         viewModel.loadShop("2")
@@ -127,8 +143,68 @@ class ShopDetailViewModelTest {
         first.tryEmit(Result.success(shop("1")))
 
         assertEquals(
-            ShopDetailUiState.Success(shop = shop("2"), hasActivePass = true),
+            ShopDetailUiState.Success(shop = shop("2"), hasActivePass = true, trialAvailable = false),
             viewModel.uiState.value
         )
+    }
+
+    @Test
+    fun `loadShop is locked on a fresh install`() {
+        passRepository.state.value = PassState()
+        val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }
+        val viewModel = viewModel(repository)
+
+        viewModel.loadShop("1")
+
+        assertEquals(
+            ShopDetailUiState.Success(shop("1"), hasActivePass = false, trialAvailable = true),
+            viewModel.uiState.value
+        )
+    }
+
+    @Test
+    fun `loadShop is locked when the trial has expired`() {
+        now = 4L * 24 * 60 * 60 * 1000
+        val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }
+        val viewModel = viewModel(repository)
+
+        viewModel.loadShop("1")
+
+        assertEquals(
+            ShopDetailUiState.Success(shop("1"), hasActivePass = false, trialAvailable = false),
+            viewModel.uiState.value
+        )
+    }
+
+    @Test
+    fun `startTrial unlocks the loaded shop`() {
+        passRepository.state.value = PassState()
+        val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }
+        val viewModel = viewModel(repository)
+        viewModel.loadShop("1")
+
+        viewModel.startTrial()
+
+        assertEquals(
+            ShopDetailUiState.Success(shop("1"), hasActivePass = true, trialAvailable = false),
+            viewModel.uiState.value
+        )
+        assertEquals(1_000L, passRepository.state.value.trialStartedAt)
+    }
+
+    @Test
+    fun `purchasePass unlocks the loaded shop after the trial expired`() {
+        now = 4L * 24 * 60 * 60 * 1000
+        val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }
+        val viewModel = viewModel(repository)
+        viewModel.loadShop("1")
+
+        viewModel.purchasePass()
+
+        assertEquals(
+            ShopDetailUiState.Success(shop("1"), hasActivePass = true, trialAvailable = false),
+            viewModel.uiState.value
+        )
+        assertEquals(now + PASS_DURATION_MILLIS, passRepository.state.value.passExpiresAt)
     }
 }
