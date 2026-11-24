@@ -7,9 +7,10 @@ import androidx.room.PrimaryKey
 data class VisitEntity(
     @PrimaryKey
     val id: String,
-    val shopId: String,
+    val shopId: String?,
     val timestamp: Long,
     val notes: String,
     val photoUrisCsv: String = "",
-    val pedestrianCount: Int = 0
+    val pedestrianCount: Int = 0,
+    val manualAddress: String? = null
 )
