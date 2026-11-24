@@ -10,7 +10,8 @@ fun VisitEntity.toDomain(): Visit {
         timestamp = timestamp,
         notes = notes,
         photoUris = if (photoUrisCsv.isBlank()) emptyList() else photoUrisCsv.split(","),
-        pedestrianCount = pedestrianCount
+        pedestrianCount = pedestrianCount,
+        manualAddress = manualAddress
     )
 }
 
@@ -21,6 +22,7 @@ fun Visit.toEntity(): VisitEntity {
         timestamp = timestamp,
         notes = notes,
         photoUrisCsv = photoUris.joinToString(","),
-        pedestrianCount = pedestrianCount
+        pedestrianCount = pedestrianCount,
+        manualAddress = manualAddress
     )
 }

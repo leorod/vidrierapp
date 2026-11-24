@@ -1,10 +1,13 @@
 package com.vidrierapp.presentation.visit
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vidrierapp.domain.model.Visit
 import com.vidrierapp.domain.usecase.GetVisitsUseCase
 import com.vidrierapp.domain.usecase.LogVisitUseCase
+import com.vidrierapp.presentation.navigation.NO_SHOP_ID
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,16 +16,30 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 class VisitViewModel(
+    private val savedStateHandle: SavedStateHandle,
     private val logVisitUseCase: LogVisitUseCase,
     private val getVisitsUseCase: GetVisitsUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(VisitUiState())
+    private val _uiState = MutableStateFlow(
+        VisitUiState(
+            notes = savedStateHandle[KEY_NOTES] ?: "",
+            manualAddress = savedStateHandle[KEY_ADDRESS] ?: ""
+        )
+    )
     val uiState: StateFlow<VisitUiState> = _uiState.asStateFlow()
 
+    private var pastVisitsJob: Job? = null
+
     fun initForShop(shopId: String) {
+        if (_uiState.value.shopId == shopId && pastVisitsJob != null) return
         _uiState.update { it.copy(shopId = shopId) }
-        viewModelScope.launch {
+        pastVisitsJob?.cancel()
+        if (shopId == NO_SHOP_ID) {
+            pastVisitsJob = Job()
+            return
+        }
+        pastVisitsJob = viewModelScope.launch {
             getVisitsUseCase(shopId).collect { visits ->
                 _uiState.update { it.copy(pastVisits = visits) }
             }
@@ -30,7 +47,15 @@ class VisitViewModel(
     }
 
     fun updateNotes(notes: String) {
+        savedStateHandle[KEY_NOTES] = notes
         _uiState.update { it.copy(notes = notes) }
+    }
+
+    fun updateManualAddress(address: String) {
+        savedStateHandle[KEY_ADDRESS] = address
+        _uiState.update {
+            it.copy(manualAddress = address, showAddressError = false, saveFailed = false)
+        }
     }
 
     fun incrementPedestrians() {
@@ -43,25 +68,38 @@ class VisitViewModel(
 
     fun saveVisit() {
         val current = _uiState.value
+        if (current.isSaving) return
+        val address = current.manualAddress.trim()
+        if (current.requiresManualAddress && address.isEmpty()) {
+            _uiState.update { it.copy(showAddressError = true) }
+            return
+        }
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
+            _uiState.update { it.copy(isSaving = true, saveFailed = false) }
             val visit = Visit(
                 id = UUID.randomUUID().toString(),
-                shopId = current.shopId,
+                shopId = if (current.requiresManualAddress) null else current.shopId,
+                manualAddress = if (current.requiresManualAddress) address else null,
                 timestamp = System.currentTimeMillis(),
-                notes = current.notes,
+                notes = current.notes.trim(),
                 photoUris = current.photoUris,
                 pedestrianCount = current.pedestrianCount
             )
-            val result = logVisitUseCase(visit)
-            result.fold(
+            logVisitUseCase(visit).fold(
                 onSuccess = {
+                    savedStateHandle.remove<String>(KEY_NOTES)
+                    savedStateHandle.remove<String>(KEY_ADDRESS)
                     _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                 },
-                onFailure = { error ->
-                    _uiState.update { it.copy(isSaving = false, error = error.message) }
+                onFailure = {
+                    _uiState.update { it.copy(isSaving = false, saveFailed = true) }
                 }
             )
         }
+    }
+
+    private companion object {
+        const val KEY_NOTES = "draft_notes"
+        const val KEY_ADDRESS = "draft_manual_address"
     }
 }

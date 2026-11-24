@@ -2,6 +2,7 @@ package com.vidrierapp.di
 
 import android.content.Context
 import androidx.room.Room
+import com.vidrierapp.data.local.database.MIGRATION_1_2
 import com.vidrierapp.data.local.database.VidrierAppDatabase
 import com.vidrierapp.data.remote.api.MockInterceptor
 import com.vidrierapp.data.remote.api.VidrierAppApiService
@@ -61,7 +62,7 @@ class AppContainer(private val context: Context) {
             context.applicationContext,
             VidrierAppDatabase::class.java,
             "vidrierapp.db"
-        ).fallbackToDestructiveMigration(dropAllTables = true).build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 
     val shopRepository: ShopRepository by lazy {

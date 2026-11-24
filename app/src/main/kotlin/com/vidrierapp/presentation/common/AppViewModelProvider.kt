@@ -1,6 +1,7 @@
 package com.vidrierapp.presentation.common
 
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -17,6 +18,7 @@ object AppViewModelProvider {
         initializer { ShopDetailViewModel(container().getShopDetailUseCase) }
         initializer {
             VisitViewModel(
+                savedStateHandle = createSavedStateHandle(),
                 logVisitUseCase = container().logVisitUseCase,
                 getVisitsUseCase = container().getVisitsUseCase
             )
@@ -26,4 +28,4 @@ object AppViewModelProvider {
 }
 
 private fun CreationExtras.container(): AppContainer =
-    (this[APPLICATION_KEY] as VidrierAppApplication).container
+    ((this[APPLICATION_KEY] as? VidrierAppApplication) ?: VidrierAppApplication.instance).container

@@ -79,6 +79,12 @@
 
     <!-- Bitácora de Visitas (RF04, RNF-08) -->
     <string name="visit_title">Bitácora de Relevamiento Técnico</string>
+    <string name="visit_manual_address_target">Dirección: %1$s</string>
+    <string name="visit_address_label">Dirección del local</string>
+    <string name="visit_address_hint">Calle y altura donde relevás</string>
+    <string name="visit_address_required">Ingresá la dirección del local para guardar la visita.</string>
+    <string name="visit_save_error">No se pudo guardar la visita. Tus notas siguen en el formulario, intentá de nuevo.</string>
+    <string name="visit_saving">Guardando visita…</string>
     <string name="visit_shop_target">Local: %1$s</string>
     <string name="visit_notes_label">Notas de campo y observaciones</string>
     <string name="visit_notes_hint">Anotá el estado de la vereda, iluminación, locales linderos, etc.</string>

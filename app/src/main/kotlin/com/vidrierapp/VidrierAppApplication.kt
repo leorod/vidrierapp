@@ -11,5 +11,11 @@ class VidrierAppApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        instance = this
+    }
+
+    companion object {
+        lateinit var instance: VidrierAppApplication
+            private set
     }
 }

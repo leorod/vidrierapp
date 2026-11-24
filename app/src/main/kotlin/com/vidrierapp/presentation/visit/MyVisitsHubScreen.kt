@@ -148,9 +148,15 @@ private fun VisitCard(visit: Visit, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(text = formattedDate, style = MaterialTheme.typography.titleMedium)
-            if (visit.shopId.isNotBlank()) {
+            if (!visit.shopId.isNullOrBlank()) {
                 Text(
                     text = stringResource(R.string.visit_shop_target, visit.shopId),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            if (!visit.manualAddress.isNullOrBlank()) {
+                Text(
+                    text = stringResource(R.string.visit_manual_address_target, visit.manualAddress),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
