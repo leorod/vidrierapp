@@ -1,0 +1,5 @@
+# Variables de entorno reales (nunca commitear)
+.env
+
+# Datos de PostgreSQL generados localmente
+pgdata/

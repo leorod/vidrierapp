@@ -33,3 +33,4 @@ plugins {
 rootProject.name = "VidrierApp"
 
 include(":app")
+include(":server")
