@@ -15,6 +15,8 @@ android {
     versionCode = 1
     versionName = "1.0"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    buildConfigField("String", "API_BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://10.0.2.2:8081/"}\"")
+    buildConfigField("boolean", "USE_MOCKS", "${project.findProperty("USE_MOCKS") ?: "true"}")
     manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") as String? ?: "YOUR_MAPS_API_KEY"
   }
 
@@ -31,7 +33,7 @@ android {
   buildFeatures {
     compose = true
     aidl = false
-    buildConfig = false
+    buildConfig = true
     shaders = false
   }
 

@@ -3,7 +3,9 @@ package com.vidrierapp.data.repository
 import com.vidrierapp.data.local.dao.CachedLocalDao
 import com.vidrierapp.data.local.entity.CachedLocalEntity
 import com.vidrierapp.data.remote.api.VidrierAppApiService
+import com.vidrierapp.data.remote.dto.CheckoutRequestDto
 import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
+import com.vidrierapp.data.remote.dto.TrialRequestDto
 import com.vidrierapp.data.remote.dto.ShopDto
 import com.vidrierapp.domain.usecase.GetCachedShopsUseCase
 import kotlinx.coroutines.flow.Flow
@@ -68,6 +70,10 @@ class RetrofitShopRepositoryTest {
             if (!online) throw IOException("offline")
             return detail.copy(id = id)
         }
+
+        override suspend fun startTrial(request: TrialRequestDto) = Unit
+
+        override suspend fun checkout(request: CheckoutRequestDto) = Unit
 
         override suspend fun reportRented(id: String): ReportRentedResponseDto {
             if (!online) throw IOException("offline")
