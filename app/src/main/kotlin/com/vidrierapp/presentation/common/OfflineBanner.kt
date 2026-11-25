@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -24,6 +23,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
+import com.vidrierapp.presentation.theme.minTouchTarget
 
 @Composable
 fun OfflineBanner(
@@ -58,7 +58,7 @@ fun OfflineBanner(
             )
             TextButton(
                 onClick = onVisitsClick,
-                modifier = Modifier.heightIn(min = 48.dp)
+                modifier = Modifier.minTouchTarget()
             ) {
                 Text(text = stringResource(R.string.offline_banner_action))
             }

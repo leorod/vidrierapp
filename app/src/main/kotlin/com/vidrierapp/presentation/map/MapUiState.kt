@@ -11,7 +11,8 @@ sealed interface MapUiState {
         val shops: List<Shop> = emptyList(),
         val categories: List<Category> = emptyList(),
         val selectedCategoryFilter: String? = null,
-        val selectedShop: Shop? = null
+        val selectedShop: Shop? = null,
+        val isFromCache: Boolean = false
     ) : MapUiState
     data class Error(val message: String, val isOffline: Boolean = false) : MapUiState
 }

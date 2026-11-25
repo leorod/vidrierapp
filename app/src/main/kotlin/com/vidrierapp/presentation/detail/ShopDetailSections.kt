@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,21 +17,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
 import com.vidrierapp.domain.model.ConsumptionFrequency
+import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.domain.model.TimeSlot
 import com.vidrierapp.domain.model.Weekday
+import com.vidrierapp.presentation.theme.DimmedContent
 
 private val FREQUENCIES_SHOWN = listOf(
     ConsumptionFrequency.DIARIA,
     ConsumptionFrequency.SEMANAL,
     ConsumptionFrequency.OCASIONAL
 )
+
+const val COLLECTING_SAMPLE_TAG = "collecting_sample"
 
 private const val PERCENT_TO_FRACTION = 100f
 
@@ -100,6 +108,25 @@ internal fun InfoCard(title: String, message: String? = null) {
                 Text(text = message, style = MaterialTheme.typography.bodyMedium)
             }
         }
+    }
+}
+
+@Composable
+internal fun CollectingSampleCard(votes: Int) {
+    DimmedContent(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(COLLECTING_SAMPLE_TAG)
+    ) {
+        Icon(
+            imageVector = Icons.Filled.HourglassTop,
+            contentDescription = null,
+            modifier = Modifier.padding(end = 12.dp)
+        )
+        Text(
+            text = stringResource(R.string.detail_sample_insufficient, votes, MIN_VOTES_FOR_METRICS),
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }
 

@@ -74,7 +74,8 @@ class MapViewModel(
             _uiState.value = MapUiState.Success(
                 shops = applyFilter(cached, categoryFilter),
                 categories = deriveCategories(cached),
-                selectedCategoryFilter = categoryFilter
+                selectedCategoryFilter = categoryFilter,
+                isFromCache = true
             )
         } else {
             _uiState.value = MapUiState.Error(

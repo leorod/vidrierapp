@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,6 +17,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -26,12 +27,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -39,12 +37,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vidrierapp.R
-import com.vidrierapp.presentation.common.ErrorState
-import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.presentation.common.AppViewModelProvider
+import com.vidrierapp.presentation.common.ErrorState
+import com.vidrierapp.presentation.theme.minTouchTarget
+import kotlinx.coroutines.launch
 
-private val MIN_TOUCH_TARGET = 48.dp
 
 @Composable
 fun ShopDetailScreen(
@@ -127,7 +125,7 @@ fun ShopDetailContent(
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.heightIn(min = MIN_TOUCH_TARGET)
+                        modifier = Modifier.minTouchTarget()
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -229,13 +227,7 @@ private fun ShopDetailBody(
                 onPurchasePassClick = onPurchasePassClick
             )
 
-            !shop.isSampleSufficient -> InfoCard(
-                title = stringResource(
-                    R.string.detail_sample_insufficient,
-                    shop.totalVotes,
-                    MIN_VOTES_FOR_METRICS
-                )
-            )
+            !shop.isSampleSufficient -> CollectingSampleCard(votes = shop.totalVotes)
 
             else -> ShopMetrics(shop)
         }
@@ -244,7 +236,7 @@ private fun ShopDetailBody(
             onClick = { onLogVisitClick(shop.id) },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = MIN_TOUCH_TARGET)
+                .minTouchTarget()
                 .semantics { contentDescription = logVisitDescription }
         ) {
             Text(text = stringResource(R.string.detail_btn_log_visit))

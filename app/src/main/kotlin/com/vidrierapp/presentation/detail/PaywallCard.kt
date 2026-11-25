@@ -3,7 +3,6 @@ package com.vidrierapp.presentation.detail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -22,8 +21,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
+import com.vidrierapp.presentation.theme.minTouchTarget
 
-private val MIN_TOUCH_TARGET = 48.dp
 
 @Composable
 internal fun PaywallCard(
@@ -61,7 +60,7 @@ internal fun PaywallCard(
                     onClick = onStartTrialClick,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = MIN_TOUCH_TARGET)
+                        .minTouchTarget()
                         .semantics { contentDescription = trialDescription }
                 ) {
                     Text(text = stringResource(R.string.pass_btn_start_trial))
@@ -70,7 +69,7 @@ internal fun PaywallCard(
             val passDescription = stringResource(R.string.pass_btn_activate_desc)
             val passModifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = MIN_TOUCH_TARGET)
+                .minTouchTarget()
                 .semantics { contentDescription = passDescription }
             if (trialAvailable) {
                 OutlinedButton(onClick = onPurchasePassClick, modifier = passModifier) {
