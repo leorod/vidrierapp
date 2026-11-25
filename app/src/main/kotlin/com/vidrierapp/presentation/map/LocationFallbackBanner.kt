@@ -3,7 +3,8 @@ package com.vidrierapp.presentation.map
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +30,7 @@ import com.vidrierapp.R
 import com.vidrierapp.domain.location.Neighborhood
 import com.vidrierapp.presentation.theme.minTouchTarget
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LocationFallbackBanner(
     isPermissionDenied: Boolean,
@@ -114,7 +116,10 @@ fun LocationFallbackBanner(
                             .padding(horizontal = 8.dp, vertical = 12.dp)
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     OutlinedButton(
                         onClick = onPickOnMapClick,
                         modifier = Modifier.minTouchTarget()

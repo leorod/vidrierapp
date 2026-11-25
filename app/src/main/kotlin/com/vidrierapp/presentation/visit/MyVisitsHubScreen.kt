@@ -1,5 +1,10 @@
 package com.vidrierapp.presentation.visit
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,24 +100,39 @@ fun MyVisitsHubContent(
     ) { innerPadding ->
         when (val state = uiState) {
             MyVisitsHubUiState.Loading -> CenteredContent(innerPadding) {
-                CircularProgressIndicator()
-                Text(
-                    text = stringResource(R.string.status_loading),
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        liveRegion = LiveRegionMode.Polite
+                    }
+                ) {
+                    CircularProgressIndicator()
+                    Text(
+                        text = stringResource(R.string.status_loading),
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
             }
 
             is MyVisitsHubUiState.Error -> CenteredContent(innerPadding) {
-                Text(
-                    text = stringResource(R.string.status_error_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = stringResource(R.string.status_error_message),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        liveRegion = LiveRegionMode.Polite
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.status_error_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                    Text(
+                        text = stringResource(R.string.status_error_message),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
                 Button(
                     onClick = onRetryClick,
                     modifier = Modifier.minTouchTarget()
@@ -188,6 +208,7 @@ private fun SavedShopCard(item: SavedShopItem, onClick: () -> Unit, modifier: Mo
     } else {
         pluralStringResource(R.plurals.hub_saved_days_ago, item.daysAgo, item.daysAgo)
     }
+    val cachedState = stringResource(R.string.hub_saved_cached_label)
     val dimmed = MaterialTheme.dimmed
     Card(
         onClick = onClick,
@@ -200,7 +221,11 @@ private fun SavedShopCard(item: SavedShopItem, onClick: () -> Unit, modifier: Mo
             .fillMaxWidth()
             .minTouchTarget()
             .testTag(SAVED_SHOP_CARD_TAG)
-            .semantics { contentDescription = description }
+            .semantics(mergeDescendants = true) {
+                contentDescription = description
+                role = Role.Button
+                stateDescription = cachedState
+            }
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -250,7 +275,7 @@ private fun VisitCard(visit: Visit, shopName: String?, modifier: Modifier = Modi
 
     val galleryDescription = stringResource(R.string.hub_photos_gallery_desc)
 
-    Card(modifier = modifier.fillMaxWidth()) {
+    Card(modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)

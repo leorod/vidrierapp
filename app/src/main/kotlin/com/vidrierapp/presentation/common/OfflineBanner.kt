@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -30,12 +29,10 @@ fun OfflineBanner(
     onVisitsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val description = stringResource(R.string.offline_banner_desc)
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .semantics {
-                contentDescription = description
+            .semantics(mergeDescendants = true) {
                 liveRegion = LiveRegionMode.Polite
             },
         color = MaterialTheme.colorScheme.errorContainer,

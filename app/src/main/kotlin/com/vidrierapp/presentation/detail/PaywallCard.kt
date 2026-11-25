@@ -1,5 +1,7 @@
 package com.vidrierapp.presentation.detail
 
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,23 +39,33 @@ internal fun PaywallCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.Lock,
-                contentDescription = stringResource(R.string.pass_locked_icon_desc),
-                modifier = Modifier.size(32.dp)
-            )
-            Text(
-                text = stringResource(R.string.pass_locked_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = stringResource(R.string.pass_locked_description),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = stringResource(R.string.pass_simulation_notice),
-                style = MaterialTheme.typography.bodySmall
-            )
+            val lockedState = stringResource(R.string.pass_locked_state)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    stateDescription = lockedState
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+                Text(
+                    text = stringResource(R.string.pass_locked_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
+                )
+                Text(
+                    text = stringResource(R.string.pass_locked_description),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = stringResource(R.string.pass_simulation_notice),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             if (trialAvailable) {
                 val trialDescription = stringResource(R.string.pass_btn_start_trial_desc)
                 Button(

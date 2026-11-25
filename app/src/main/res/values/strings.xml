@@ -20,7 +20,8 @@
     <string name="map_filter_all">Todos</string>
     <string name="map_btn_my_location_desc">Centrar mapa en mi ubicación actual</string>
     <string name="map_shops_found">%1$d locales en alquiler con demanda validada</string>
-    <string name="map_card_top_rubro">Rubro más pedido:</string>
+    <string name="map_card_top_rubro">Rubro más pedido: %1$s</string>
+    <string name="map_card_state_collecting">Muestra en recolección</string>
     <string name="map_card_total_votes">%1$d votos de vecinos</string>
     <string name="map_card_view_detail">Ver ficha completa</string>
     <string name="map_location_permission_denied">Permiso de GPS no otorgado. Podés buscar tu barrio manualmente.</string>
@@ -37,6 +38,7 @@
     <string name="map_marker_desc">Local en %1$s</string>
     <string name="map_filter_row_desc">Filtrar locales por rubro</string>
     <string name="map_filter_active">Filtro activo</string>
+    <string name="map_filter_inactive">Filtro no activo</string>
     <string name="map_filter_reset">Ver todos los rubros</string>
     <string name="map_no_shops_found">No se encontraron locales para el filtro seleccionado.</string>
 
@@ -64,6 +66,8 @@
     <string name="detail_btn_log_visit_desc">Iniciar relevamiento técnico y bitácora de visita para este local</string>
     <string name="detail_btn_report_rented">Reportar local alquilado</string>
     <string name="detail_btn_report_rented_desc">Reportar que este local ya fue alquilado</string>
+    <string name="detail_btn_report_rented_state_done">Reporte enviado</string>
+    <string name="detail_btn_report_rented_state_submitting">Enviando reporte</string>
     <string name="detail_btn_report_rented_done">Ya reportaste este local</string>
     <string name="detail_btn_report_rented_done_desc">Ya reportaste este local como alquilado desde este dispositivo</string>
     <string name="report_rented_dialog_title">¿Reportar local alquilado?</string>
@@ -72,6 +76,8 @@
     <string name="report_rented_success">Gracias, recibimos tu reporte del local alquilado</string>
     <string name="report_rented_error">No se pudo enviar el reporte</string>
     <string name="report_rented_already">Ya reportaste este local</string>
+    <string name="detail_sample_separator">" · "</string>
+    <string name="detail_sample_state_collecting">Muestra en recolección</string>
     <string name="detail_sample_votes">%1$d votos acumulados</string>
     <string name="detail_sample_last_vote">Último voto %1$s</string>
     <string name="detail_sample_active_since">Activo desde %1$s</string>
@@ -103,7 +109,7 @@
     <string name="pass_btn_start_trial">Iniciar Prueba Gratuita de 3 días (simulada)</string>
     <string name="pass_btn_start_trial_desc">Iniciar la prueba gratuita simulada de 3 días para ver las métricas</string>
     <string name="pass_btn_activate_desc">Simular la compra del pase de 30 días para ver las métricas</string>
-    <string name="pass_locked_icon_desc">Candado: métricas bloqueadas</string>
+    <string name="pass_locked_state">Métricas bloqueadas</string>
     <string name="pass_simulation_notice">Simulación: no se realiza ningún cobro real.</string>
 
     <!-- Bitácora de Visitas (RF04, RNF-08) -->
@@ -155,10 +161,8 @@
     <string name="status_offline_banner">Modo sin conexión. Mostrando datos almacenados en el dispositivo.</string>
     <string name="status_error_title">No se pudo cargar la información</string>
     <string name="status_error_offline_message">Sin conexión a internet. Verificá tu red y reintentá.</string>
-    <string name="status_error_desc">%1$s. %2$s</string>
     <string name="action_retry_desc">Reintentar la carga</string>
     <string name="offline_banner_message">Sin conexión · Podés consultar tus visitas y locales guardados</string>
-    <string name="offline_banner_desc">Sin conexión a internet. Podés consultar tus visitas y locales guardados.</string>
     <string name="offline_banner_action">Mis Visitas</string>
     <string name="status_error_message">Ocurrió un error al contactar al servidor. Los datos ingresados están guardados.</string>
 

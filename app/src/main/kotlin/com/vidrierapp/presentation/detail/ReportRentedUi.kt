@@ -1,5 +1,6 @@
 package com.vidrierapp.presentation.detail
 
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -31,12 +32,18 @@ fun ReportRentedButton(
         if (alreadyReported) R.string.detail_btn_report_rented_done_desc
         else R.string.detail_btn_report_rented_desc
     )
+    val doneState = stringResource(R.string.detail_btn_report_rented_state_done)
+    val submittingState = stringResource(R.string.detail_btn_report_rented_state_submitting)
     TextButton(
         onClick = onClick,
         enabled = !alreadyReported && !isSubmitting,
         modifier = modifier
             .minTouchTarget()
-            .semantics { contentDescription = description }
+            .semantics {
+                contentDescription = description
+                if (alreadyReported) stateDescription = doneState
+                else if (isSubmitting) stateDescription = submittingState
+            }
     ) {
         Text(
             text = stringResource(

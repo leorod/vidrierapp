@@ -30,6 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
@@ -56,10 +61,15 @@ fun ShopPreviewCard(
     var dragOffsetPx by remember(shop.id) { mutableFloatStateOf(0f) }
     val dismissThresholdPx = with(LocalDensity.current) { DISMISS_DRAG_THRESHOLD_DP.dp.toPx() }
 
+    val collectingState = stringResource(R.string.map_card_state_collecting)
     ElevatedCard(
         onClick = onViewDetailClick,
         modifier = modifier
             .testTag(SHOP_PREVIEW_CARD_TAG)
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                if (!shop.isSampleSufficient) stateDescription = collectingState
+            }
             .offset { IntOffset(0, dragOffsetPx.roundToInt()) }
             .draggable(
                 orientation = Orientation.Vertical,
@@ -83,7 +93,8 @@ fun ShopPreviewCard(
                 Column(modifier = Modifier.weight(1f).padding(top = 8.dp)) {
                     Text(
                         text = shop.address,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() }
                     )
                     Text(
                         text = shop.neighborhood,
@@ -104,8 +115,10 @@ fun ShopPreviewCard(
             Column(modifier = Modifier.padding(top = 8.dp, end = 8.dp)) {
                 if (shop.isSampleSufficient) {
                     Text(
-                        text = stringResource(R.string.map_card_top_rubro) +
-                            " " + shop.topCategory?.name.orEmpty(),
+                        text = stringResource(
+                            R.string.map_card_top_rubro,
+                            shop.topCategory?.name.orEmpty()
+                        ),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 } else {

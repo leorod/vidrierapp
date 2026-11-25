@@ -79,7 +79,7 @@ class MapViewModel(
             )
         } else {
             _uiState.value = MapUiState.Error(
-                message = error.message ?: "Unknown error",
+                message = error.message.orEmpty(),
                 isOffline = !networkMonitor.isOnline.first()
             )
         }
