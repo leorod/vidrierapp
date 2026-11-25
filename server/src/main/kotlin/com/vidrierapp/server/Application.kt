@@ -71,6 +71,10 @@ fun Application.configureApp(
         exception<DuplicateVoteException> { call, cause -> call.respond(HttpStatusCode.Conflict, ErrorResponse(cause.message ?: "Duplicate vote")) }
         exception<RateLimitExceededException> { call, cause -> call.respond(HttpStatusCode.TooManyRequests, ErrorResponse(cause.message ?: "Too many requests")) }
         exception<SecurityException> { call, cause -> call.respond(HttpStatusCode.Unauthorized, ErrorResponse(cause.message ?: "Unauthorized")) }
+        exception<Throwable> { call, cause ->
+            call.application.environment.log.error("Unhandled error on ${call.request.local.uri}", cause)
+            call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Internal server error"))
+        }
     }
     configureRouting(repository, normalizer, paymentProcessor, geocodingService, adminToken)
     webDir?.let { dir -> File(dir).takeIf { it.isDirectory }?.let { root -> routing { staticFiles("/", root) { default("index.html") } } } }

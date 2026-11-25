@@ -80,6 +80,12 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
     override fun startTrial(deviceId: String) = TrialResponse(deviceId, "TRIAL_ACTIVE", Instant.parse("2026-11-28T00:00:00Z").toString(), true)
 
     override fun updateShopStatus(id: UUID, status: String) { statusUpdates += id to status }
+
+    override fun expireStaleShops() = 2
+
+    override fun expireAccessStatuses() = 1
+
+    override fun refreshAggregates() = true
 }
 
 private fun apiTest(repository: FakeRepository = FakeRepository(), block: suspend ApplicationTestBuilder.(FakeRepository) -> Unit) = testApplication {
@@ -205,5 +211,12 @@ class ApiRoutesTest {
         val response = postJson("/api/v1/admin/shops/$SHOP_ID/status", """{"status":"RENTED"}""", mapOf(HttpHeaders.Authorization to "Bearer $ADMIN_TOKEN"))
         assertEquals(HttpStatusCode.NoContent, response.status)
         assertEquals(listOf(SHOP_ID to "RENTED"), repository.statusUpdates)
+    }
+
+    @Test
+    fun `admin maintenance run answers a serializable summary`() = apiTest {
+        val response = postJson("/api/v1/admin/maintenance/run", "{}", mapOf(HttpHeaders.Authorization to "Bearer $ADMIN_TOKEN"))
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("\"expiredShops\":2"))
     }
 }

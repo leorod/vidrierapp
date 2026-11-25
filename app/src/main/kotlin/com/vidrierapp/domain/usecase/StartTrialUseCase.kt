@@ -11,8 +11,9 @@ class StartTrialUseCase(
     suspend operator fun invoke(): Boolean {
         val state = repository.passState.first()
         if (state.trialUsed) return false
-        repository.savePassState(state.copy(trialStartedAt = clock()))
+        val startedAt = clock()
         onStarted()
+        repository.savePassState(state.copy(trialStartedAt = startedAt))
         return true
     }
 }

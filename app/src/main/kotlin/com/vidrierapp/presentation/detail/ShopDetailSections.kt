@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -77,12 +78,7 @@ internal fun SampleSummary(shop: Shop, showVotes: Boolean) {
     val parts = buildList {
         if (showVotes) add(stringResource(R.string.detail_sample_votes, shop.totalVotes))
         shop.lastVoteAt?.let { lastVoteAt ->
-            val relative = DateUtils.getRelativeTimeSpanString(
-                lastVoteAt,
-                now,
-                DateUtils.MINUTE_IN_MILLIS
-            ).toString()
-            add(stringResource(R.string.detail_sample_last_vote, relative))
+            add(stringResource(R.string.detail_sample_last_vote, relativeTime(now - lastVoteAt)))
         }
         shop.firstVoteAt?.let { firstVoteAt ->
             val month = DateUtils.formatDateTime(
@@ -101,6 +97,19 @@ internal fun SampleSummary(shop: Shop, showVotes: Boolean) {
             text = parts.joinToString(stringResource(R.string.detail_sample_separator)),
             style = MaterialTheme.typography.titleMedium
         )
+    }
+}
+
+@Composable
+private fun relativeTime(elapsedMillis: Long): String {
+    val minutes = (elapsedMillis / DateUtils.MINUTE_IN_MILLIS).coerceAtLeast(0).toInt()
+    val hours = minutes / 60
+    val days = hours / 24
+    return when {
+        minutes < 1 -> stringResource(R.string.detail_last_vote_just_now)
+        hours < 1 -> pluralStringResource(R.plurals.detail_last_vote_minutes, minutes, minutes)
+        days < 1 -> pluralStringResource(R.plurals.detail_last_vote_hours, hours, hours)
+        else -> pluralStringResource(R.plurals.detail_last_vote_days, days, days)
     }
 }
 
@@ -202,10 +211,11 @@ private fun CategoryBreakdown(shop: Shop) {
         shop.voteBreakdown.forEach { vote ->
             BarRow(
                 label = vote.category.name,
-                valueText = stringResource(R.string.detail_votes_count, vote.count, vote.percentage),
+                valueText = pluralStringResource(R.plurals.detail_votes_count, vote.count, vote.count, vote.percentage),
                 fraction = vote.percentage / PERCENT_TO_FRACTION,
-                description = stringResource(
-                    R.string.detail_category_bar_desc,
+                description = pluralStringResource(
+                    R.plurals.detail_category_bar_desc,
+                    vote.count,
                     vote.category.name,
                     vote.count,
                     vote.percentage
@@ -263,7 +273,7 @@ private fun DistributionSection(title: String, entries: List<Pair<String, Int>>)
                 label = label,
                 valueText = count.toString(),
                 fraction = count.toFloat() / maxCount,
-                description = stringResource(R.string.detail_distribution_bar_desc, label, count)
+                description = pluralStringResource(R.plurals.detail_distribution_bar_desc, count, label, count)
             )
         }
     }

@@ -238,7 +238,7 @@ class AccessibilitySemanticsTest {
             .performScrollTo().assert(isHeadingNode())
         composeTestRule.onNode(
             androidx.compose.ui.test.hasContentDescription(
-                context.getString(R.string.detail_category_bar_desc, "Cafetería", 20, 100f)
+                context.resources.getQuantityString(R.plurals.detail_category_bar_desc, 20, "Cafetería", 20, 100f)
             )
         ).performScrollTo().assertTextContains("Cafetería")
     }
