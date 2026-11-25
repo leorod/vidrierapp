@@ -9,6 +9,7 @@ import com.vidrierapp.server.model.UpdateShopStatusRequest
 import com.vidrierapp.server.model.GeoResolveRequest
 import com.vidrierapp.server.model.AddCategoryAliasRequest
 import com.vidrierapp.server.model.ReclassifyVotesRequest
+import com.vidrierapp.server.model.MaintenanceRunResponse
 import com.vidrierapp.server.model.VoteResponse
 import com.vidrierapp.server.service.Bounds
 import com.vidrierapp.server.service.CategoryNormalizer
@@ -92,7 +93,7 @@ fun Application.configureRouting(repository: VidrierAppRepository, normalizer: C
                     val expiredShops = repository.expireStaleShops()
                     val expiredAccess = repository.expireAccessStatuses()
                     repository.refreshAggregates()
-                    call.respond(mapOf("expiredShops" to expiredShops, "expiredAccess" to expiredAccess, "aggregatesRefreshed" to true))
+                    call.respond(MaintenanceRunResponse(expiredShops, expiredAccess, true))
                 }
                 post("/categories/aliases") {
                     call.requireAdmin(adminToken)

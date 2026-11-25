@@ -76,6 +76,9 @@ data class CreateVoteRequest(
 data class ReportRentedResponse(val shopId: String, val reportCount: Int, val listingStatus: String)
 
 @Serializable
+data class MaintenanceRunResponse(val expiredShops: Int, val expiredAccess: Int, val aggregatesRefreshed: Boolean)
+
+@Serializable
 data class VoteResponse(val id: String, val category: String, val classified: Boolean)
 
 @Serializable

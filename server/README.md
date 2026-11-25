@@ -73,7 +73,7 @@ Para ejecutar la API sin Docker, desde la raíz del repositorio usar `./gradlew 
 
 El detalle retorna métricas únicamente cuando el dispositivo tiene acceso vigente y el local alcanzó 15 votos. El normalizador determinístico limpia texto libre, consulta alias del catálogo y aplica Levenshtein antes de registrar un voto como no clasificado.
 
-Los votos requieren los headers `X-Fingerprint-Hash` y `X-Browser-Token`. El backend rechaza duplicados por token o huella durante 30 días y aplica un límite suave de 20 solicitudes por IP hasheada por hora para preservar el uso compartido de redes móviles. El mantenimiento se ejecuta cada hora y también puede ejecutarse explícitamente desde el endpoint admin.
+Los votos requieren los headers `X-Fingerprint-Hash` y `X-Browser-Token`. El backend rechaza duplicados por token o huella durante 30 días y aplica un límite suave de 20 solicitudes por IP hasheada por hora para preservar el uso compartido de redes móviles. El mantenimiento (caducidad de locales y accesos) se ejecuta cada hora; los agregados de votos se refrescan cada 30 segundos. Ambos pueden ejecutarse explícitamente desde el endpoint admin.
 
 Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con el `placeId` de Google. El resultado contiene un `resolutionId` que se envía al crear el local junto al pin manual. El backend mantiene esa resolución solo 15 minutos, valida que el pin esté a 150 m o menos y nunca persiste las coordenadas recibidas de Google. Usar `confirmFarLocation: true` para la salida de emergencia documentada en el ADR; queda auditada como `locationOverrideUsed`.
 
@@ -89,6 +89,13 @@ Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servido
 
 ```bash
 ./gradlew :app:assembleDebug -PUSE_MOCKS=false -PAPI_BASE_URL=http://10.0.2.2:8081/
+```
+
+Si el emulador no llega a `10.0.2.2`, redirigí el puerto y usá `localhost`:
+
+```bash
+adb reverse tcp:8081 tcp:8081
+./gradlew :app:installDebug -PUSE_MOCKS=false -PAPI_BASE_URL=http://localhost:8081/
 ```
 
 ## Modelo de datos
