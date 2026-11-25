@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -97,6 +98,7 @@ class MapViewModelOfflineTest {
 
         val state = vm.uiState.value as MapUiState.Success
         assertEquals(listOf("a", "b"), state.shops.map { it.id })
+        assertTrue(state.isFromCache)
     }
 
     @Test
@@ -111,6 +113,8 @@ class MapViewModelOfflineTest {
         vm.retry()
 
         assertEquals(2, repository.calls)
-        assertEquals(listOf("a"), (vm.uiState.value as MapUiState.Success).shops.map { it.id })
+        val recovered = vm.uiState.value as MapUiState.Success
+        assertEquals(listOf("a"), recovered.shops.map { it.id })
+        assertFalse(recovered.isFromCache)
     }
 }
