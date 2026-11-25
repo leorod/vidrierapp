@@ -1,6 +1,6 @@
-# VidrierApp — Backend (BE-01)
+# VidrierApp — Backend (BE-01, BE-02, BE-03)
 
-Infraestructura de base de datos para VidrierApp: **PostgreSQL 16 + PostGIS 3.4** con migraciones versionadas via **Flyway**.
+API REST en **Ktor + Kotlin** y PostgreSQL 16 + PostGIS 3.4 con migraciones versionadas mediante Flyway.
 
 ## Estructura
 
@@ -9,6 +9,8 @@ server/
 ├── docker-compose.yml          # Orquesta DB + Flyway + Adminer
 ├── .env.example                # Plantilla de variables de entorno
 ├── .gitignore
+├── build.gradle.kts              # Módulo Ktor incluido en el Gradle raíz
+├── src/main/kotlin/              # API REST, normalización y acceso JDBC
 ├── db/
 │   ├── init/
 │   │   └── 00_extensions.sql   # Extensiones (postgis, uuid-ossp, pg_trgm)
@@ -29,8 +31,8 @@ server/
 # 1. Configurar variables de entorno
 cp .env.example .env
 
-# 2. Levantar DB y ejecutar migraciones
-docker compose up db flyway
+# 2. Levantar DB, migraciones y API Ktor
+docker compose up --build
 
 # 3. Verificar estado
 docker compose ps
@@ -39,10 +41,28 @@ docker compose ps
 open http://localhost:8080
 # Sistema: PostgreSQL | Server: db | Usuario/Contraseña: vidrierapp | DB: vidrierapp
 
-# 5. Validar consulta espacial < 50 ms
+# 5. Validar que la API esté lista
+open http://localhost:8081/health
+
+# 6. Validar consulta espacial < 50 ms
 chmod +x scripts/validate_spatial.sh
 ./scripts/validate_spatial.sh
 ```
+
+Para ejecutar la API sin Docker, desde la raíz del repositorio usar `./gradlew :server:run`. La API queda disponible en `http://localhost:8081`.
+
+## API MVP
+
+| Método | Endpoint | Propósito |
+|---|---|---|
+| `GET` | `/health` | Health check sin base de datos. |
+| `GET` | `/api/v1/shops?category=&lonMin=&latMin=&lonMax=&latMax=` | Locales disponibles para mapa y filtro opcional. |
+| `GET` | `/api/v1/shops/{id}` | Ficha del local. Enviar `X-Device-Id` para habilitar métricas con trial/pase vigente. |
+| `POST` | `/api/v1/votes` | Voto anónimo. Requiere `X-Fingerprint-Hash`; acepta `X-Browser-Token`. |
+| `POST` | `/api/v1/shops/{id}/report-rented` | Incrementa reportes y pasa a revisión al tercer reporte. |
+| `POST` | `/api/v1/auth/trial` | Inicia o consulta el trial único por dispositivo. |
+
+El detalle retorna métricas únicamente cuando el dispositivo tiene acceso vigente y el local alcanzó 15 votos. El normalizador determinístico limpia texto libre, consulta alias del catálogo y aplica Levenshtein antes de registrar un voto como no clasificado.
 
 ## Modelo de datos
 

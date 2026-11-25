@@ -51,6 +51,30 @@ services:
       - vidrierapp_net
 
   # ─────────────────────────────────────────────────────────────
+  # Ktor API — se inicia solo cuando Flyway terminó correctamente
+  # ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: vidrierapp_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      PORT: 8081
+      JDBC_DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-vidrierapp}
+      POSTGRES_USER: ${POSTGRES_USER:-vidrierapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vidrierapp_secret}
+    ports:
+      - "${API_HOST_PORT:-8081}:8081"
+    networks:
+      - vidrierapp_net
+
+  # ─────────────────────────────────────────────────────────────
   # Adminer — UI web ligera para inspeccionar la DB
   # (solo desarrollo; comentar o remover en producción)
   # ─────────────────────────────────────────────────────────────
