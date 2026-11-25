@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#00506E">
+<meta name="robots" content="noindex">
+<title>VidrierApp · Tu voto</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="card" id="app">
+  <p class="demo" id="demo" hidden></p>
+
+  <section id="view-form" hidden>
+    <h1 id="t-title"></h1>
+    <p class="lead" id="t-lead"></p>
+    <form id="form" novalidate>
+      <fieldset>
+        <legend id="t-category"></legend>
+        <div class="chips" id="chips"></div>
+        <div class="other" id="other-wrap" hidden>
+          <label for="other" id="t-other-label"></label>
+          <input id="other" type="text" list="rubros" maxlength="60" autocomplete="off" autocapitalize="sentences" enterkeyhint="done">
+          <datalist id="rubros"></datalist>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend><span id="t-frequency"></span> <span class="opt" id="t-optional"></span></legend>
+        <div class="seg" id="freq" role="group"></div>
+      </fieldset>
+      <button type="submit" class="primary" id="submit" disabled></button>
+      <p class="hint" id="hint"></p>
+    </form>
+    <p class="privacy" id="t-privacy"></p>
+    <footer><button type="button" class="link" id="open-report"></button></footer>
+  </section>
+
+  <section id="view-result" role="status" aria-live="polite" tabindex="-1" hidden>
+    <div class="icon" id="r-icon" aria-hidden="true"></div>
+    <h1 id="r-title"></h1>
+    <p id="r-body"></p>
+    <p class="note" id="r-note" hidden></p>
+    <button type="button" class="primary" id="r-action" hidden></button>
+  </section>
+
+  <dialog id="dlg" aria-labelledby="d-title" aria-describedby="d-body">
+    <h2 id="d-title"></h2>
+    <p id="d-body"></p>
+    <div class="row">
+      <button type="button" class="secondary" id="d-cancel"></button>
+      <button type="button" class="primary" id="d-confirm"></button>
+    </div>
+  </dialog>
+</main>
+<script src="vote-logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
