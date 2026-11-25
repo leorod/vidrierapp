@@ -9,7 +9,9 @@ COPY gradle.properties settings.gradle.kts build.gradle.kts ./
 COPY server/build.gradle.kts server/build.gradle.kts
 COPY server/src server/src
 
-RUN ./gradlew :server:installDist --no-daemon
+RUN rm -f gradle/gradle-daemon-jvm.properties \
+ && sed -i '/include(":app")/d' settings.gradle.kts \
+ && ./gradlew :server:installDist --no-daemon --no-configuration-cache
 
 FROM eclipse-temurin:21-jre-alpine
 
