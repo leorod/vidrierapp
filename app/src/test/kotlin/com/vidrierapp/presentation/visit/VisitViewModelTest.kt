@@ -222,6 +222,29 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun `a negative count in the saved state handle is restored as zero`() {
+        val handle = SavedStateHandle(mapOf("draft_pedestrian_count" to -4))
+
+        val viewModel = createViewModel(handle = handle)
+        viewModel.decrementPedestrians()
+
+        assertEquals(0, viewModel.uiState.value.pedestrianCount)
+        assertEquals(0, handle.get<Int>("draft_pedestrian_count"))
+    }
+
+    @Test
+    fun `decrement after a restored count continues from the restored value`() {
+        val handle = SavedStateHandle(mapOf("draft_pedestrian_count" to 1))
+        val viewModel = createViewModel(handle = handle)
+
+        viewModel.decrementPedestrians()
+        viewModel.decrementPedestrians()
+        viewModel.incrementPedestrians()
+
+        assertEquals(1, viewModel.uiState.value.pedestrianCount)
+    }
+
+    @Test
     fun `pedestrian count is restored from the saved state handle`() {
         val handle = SavedStateHandle()
         createViewModel(handle = handle).apply {

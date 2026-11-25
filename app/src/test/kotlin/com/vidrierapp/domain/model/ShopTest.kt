@@ -19,6 +19,11 @@ class ShopTest {
     )
 
     @Test
+    fun `sample is insufficient with 0 votes`() {
+        assertFalse(shopWithVotes(0).isSampleSufficient)
+    }
+
+    @Test
     fun `sample is insufficient with 14 votes`() {
         assertFalse(shopWithVotes(14).isSampleSufficient)
     }

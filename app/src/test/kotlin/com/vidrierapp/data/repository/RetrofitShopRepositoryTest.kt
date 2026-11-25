@@ -54,7 +54,14 @@ class RetrofitShopRepositoryTest {
         var calls = 0
         val reported = mutableListOf<String>()
 
-        override suspend fun getShops(category: String?): List<ShopDto> = emptyList()
+        val requestedCategories = mutableListOf<String?>()
+        var shops: List<ShopDto> = emptyList()
+
+        override suspend fun getShops(category: String?): List<ShopDto> {
+            requestedCategories += category
+            if (!online) throw IOException("offline")
+            return shops
+        }
 
         override suspend fun getShopDetail(id: String): ShopDto {
             calls++
@@ -120,6 +127,84 @@ class RetrofitShopRepositoryTest {
 
         assertTrue(result.exceptionOrNull() is IOException)
         assertTrue(dao.rows.value.isEmpty())
+    }
+
+    @Test
+    fun `offline returns cached shop one millisecond before seven days`() = runTest {
+        api.detail = dto("s1", address = "Calle Cache 1")
+        repository.getShopDetail("s1").first()
+        api.online = false
+        now += 7 * day - 1
+
+        val result = repository.getShopDetail("s1").first()
+
+        assertEquals("Calle Cache 1", result.getOrThrow().address)
+        assertEquals(1, dao.rows.value.size)
+    }
+
+    @Test
+    fun `offline fails and purges entry one millisecond after seven days`() = runTest {
+        repository.getShopDetail("s1").first()
+        api.online = false
+        now += 7 * day + 1
+
+        val result = repository.getShopDetail("s1").first()
+
+        assertTrue(result.exceptionOrNull() is IOException)
+        assertTrue(dao.rows.value.isEmpty())
+    }
+
+    @Test
+    fun `offline purges expired entries of other shops while serving a valid one`() = runTest {
+        repository.getShopDetail("stale").first()
+        now += 5 * day
+        repository.getShopDetail("fresh").first()
+        now += 3 * day
+        api.online = false
+
+        val result = repository.getShopDetail("fresh").first()
+
+        assertEquals("fresh", result.getOrThrow().id)
+        assertEquals(setOf("fresh"), dao.rows.value.keys)
+    }
+
+    @Test
+    fun `an offline read does not extend the cache lifetime`() = runTest {
+        repository.getShopDetail("s1").first()
+        api.online = false
+        now += 3 * day
+        assertTrue(repository.getShopDetail("s1").first().isSuccess)
+        now += 4 * day
+
+        val result = repository.getShopDetail("s1").first()
+
+        assertTrue(result.exceptionOrNull() is IOException)
+    }
+
+    @Test
+    fun `getShops maps the dto list and forwards the category filter`() = runTest {
+        api.shops = listOf(dto("a"), dto("b"))
+
+        val result = repository.getShops("cafeteria").first()
+
+        assertEquals(listOf("a", "b"), result.getOrThrow().map { it.id })
+        assertEquals(listOf<String?>("cafeteria"), api.requestedCategories)
+    }
+
+    @Test
+    fun `getShops without filter sends no category`() = runTest {
+        repository.getShops(null).first()
+
+        assertEquals(listOf<String?>(null), api.requestedCategories)
+    }
+
+    @Test
+    fun `getShops returns a failure when the network is down`() = runTest {
+        api.online = false
+
+        val result = repository.getShops(null).first()
+
+        assertTrue(result.exceptionOrNull() is IOException)
     }
 
     @Test

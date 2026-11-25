@@ -29,6 +29,15 @@ class NetworkStatusViewModelTest {
     }
 
     @Test
+    fun `isOffline is true from the start when the monitor begins offline`() = runTest(UnconfinedTestDispatcher()) {
+        val vm = NetworkStatusViewModel(FakeNetworkMonitor(initialOnline = false))
+        val job = vm.isOffline.onEach { }.launchIn(this)
+
+        assertTrue(vm.isOffline.value)
+        job.cancel()
+    }
+
+    @Test
     fun `isOffline mirrors the monitor`() = runTest(UnconfinedTestDispatcher()) {
         val monitor = FakeNetworkMonitor(initialOnline = true)
         val vm = NetworkStatusViewModel(monitor)

@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -71,7 +72,7 @@ class ShopDetailViewModelTest {
         networkMonitor = networkMonitor
     )
 
-    private fun shop(id: String) = Shop(
+    private fun shop(id: String, votes: Int = 20) = Shop(
         id = id,
         address = "address $id",
         neighborhood = "neighborhood",
@@ -80,8 +81,15 @@ class ShopDetailViewModelTest {
         surfaceAreaM2 = 50,
         rentalPrice = "100",
         topCategory = null,
-        totalVotes = 20
+        totalVotes = votes
     )
+
+    private fun loadedShop(votes: Int): Shop {
+        val repository = FakeShopRepository().apply { result = Result.success(shop("1", votes)) }
+        val viewModel = viewModel(repository)
+        viewModel.loadShop("1")
+        return (viewModel.uiState.value as ShopDetailUiState.Success).shop
+    }
 
     @Before
     fun setUp() {
@@ -105,6 +113,26 @@ class ShopDetailViewModelTest {
             ShopDetailUiState.Success(shop = shop("1"), hasActivePass = true, trialAvailable = false),
             viewModel.uiState.value
         )
+    }
+
+    @Test
+    fun `loaded shop flags insufficient sample with 0 votes`() {
+        assertFalse(loadedShop(0).isSampleSufficient)
+    }
+
+    @Test
+    fun `loaded shop flags insufficient sample with 14 votes`() {
+        assertFalse(loadedShop(14).isSampleSufficient)
+    }
+
+    @Test
+    fun `loaded shop has sufficient sample with 15 votes`() {
+        assertTrue(loadedShop(15).isSampleSufficient)
+    }
+
+    @Test
+    fun `loaded shop has sufficient sample with 16 votes`() {
+        assertTrue(loadedShop(16).isSampleSufficient)
     }
 
     @Test
