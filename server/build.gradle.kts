@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.hikari)
     implementation(libs.postgresql)
     testImplementation(kotlin("test"))
+    testImplementation(libs.ktor.server.test.host)
 }
 
 tasks.test {

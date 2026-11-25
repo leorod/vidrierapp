@@ -81,6 +81,16 @@ Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con
 
 `POST /api/v1/payments/checkout` recibe `deviceId` y `paymentToken`. No recibe ni almacena datos de tarjeta. Usar `mock_approve` para simular un cobro aprobado y activar el pase por 30 días; usar `mock_decline` para simular un rechazo. Cada intento queda auditado en `mock_payments`, incluyendo importe simulado y referencia del proveedor mock.
 
+## Consola interna y web
+
+Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola pide el `ADMIN_API_TOKEN`, permite dar de alta locales, cambiar su estado, revalidarlos por 60 días, ejecutar la caducidad y generar el cartel con el QR del local.
+
+## Conectar la app
+
+```bash
+./gradlew :app:assembleDebug -PUSE_MOCKS=false -PAPI_BASE_URL=http://10.0.2.2:8081/
+```
+
 ## Modelo de datos
 
 ### `shops` — Locales comerciales

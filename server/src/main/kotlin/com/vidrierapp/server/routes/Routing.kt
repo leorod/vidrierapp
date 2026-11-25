@@ -43,18 +43,17 @@ fun Application.configureRouting(repository: VidrierAppRepository, normalizer: C
 
             post("/votes") {
                 val request = call.receive<CreateVoteRequest>()
-                val fingerprint = call.request.headers["X-Fingerprint-Hash"]?.takeIf { it.length in 32..128 }
+                val fingerprint = (call.request.headers["X-Fingerprint-Hash"] ?: request.fingerprintHash)?.takeIf { it.length in 32..128 }
                     ?: throw IllegalArgumentException("X-Fingerprint-Hash header is required")
-                val browserToken = call.request.headers["X-Browser-Token"]?.takeIf { it.length in 16..256 }
+                val browserToken = (call.request.headers["X-Browser-Token"] ?: request.clientToken)?.takeIf { it.length in 16..256 }
                     ?: throw IllegalArgumentException("X-Browser-Token header is required")
-                val category = normalizer.normalize(request.category, request.otherCategory)
-                val voteId = repository.submitVote(UUID.fromString(request.shopId), category, request.frequency, fingerprint, browserToken, call.clientIp())
+                val category = normalizer.normalize(request.category, request.resolvedOther())
+                val voteId = repository.submitVote(call.parseUuid(request.resolvedShopId(), "shopId"), category, request.frequency, fingerprint, browserToken, call.clientIp())
                 call.respond(HttpStatusCode.Created, VoteResponse(voteId.toString(), category.slug, category.classified))
             }
 
             post("/shops/{id}/report-rented") {
-                repository.reportRented(call.uuidParameter("id"))
-                call.respond(HttpStatusCode.Accepted, mapOf("status" to "reported"))
+                call.respond(HttpStatusCode.Accepted, repository.reportRented(call.uuidParameter("id")))
             }
 
             post("/auth/trial") {
@@ -126,8 +125,10 @@ private fun io.ktor.server.application.ApplicationCall.requireAdmin(expectedToke
 private fun io.ktor.server.application.ApplicationCall.clientIp(): String =
     request.headers["X-Forwarded-For"]?.substringBefore(',')?.trim() ?: request.local.remoteHost
 
-private fun io.ktor.server.application.ApplicationCall.uuidParameter(name: String): UUID =
-    parameters[name]?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: throw IllegalArgumentException("Invalid $name")
+private fun io.ktor.server.application.ApplicationCall.uuidParameter(name: String): UUID = parseUuid(parameters[name], name)
+
+private fun io.ktor.server.application.ApplicationCall.parseUuid(value: String?, name: String): UUID =
+    value?.let { runCatching { UUID.fromString(it) }.getOrNull() } ?: throw IllegalArgumentException("Invalid $name")
 
 private fun io.ktor.server.application.ApplicationCall.boundsOrNull(): Bounds? {
     val parameters = request.queryParameters

@@ -17,6 +17,7 @@ data class ShopSummaryResponse(
     val topCategoryName: String? = null,
     val totalVotes: Int = 0,
     val status: String,
+    val listingStatus: String = "ACTIVE",
 )
 
 @Serializable
@@ -31,14 +32,20 @@ data class ShopDetailResponse(
     val topCategoryName: String? = null,
     val totalVotes: Int,
     val status: String,
-    val firstVoteAt: String? = null,
-    val lastVoteAt: String? = null,
+    val firstVoteAt: Long? = null,
+    val lastVoteAt: Long? = null,
     val isSampleSufficient: Boolean,
     val metricsAvailable: Boolean,
     val votes: List<CategoryMetricResponse> = emptyList(),
     val frequency: List<FrequencyMetricResponse> = emptyList(),
     val hourlyDistribution: List<HourlyMetricResponse> = emptyList(),
     val contactAgency: String = "",
+    val contactPhone: String = "",
+    val contactEmail: String = "",
+    val listingStatus: String = "ACTIVE",
+    val frequencyCounts: Map<String, Int> = emptyMap(),
+    val votesByWeekday: Map<String, Int> = emptyMap(),
+    val votesByTimeSlot: Map<String, Int> = emptyMap(),
 )
 
 @Serializable
@@ -51,7 +58,22 @@ data class FrequencyMetricResponse(val frequency: String, val voteCount: Int)
 data class HourlyMetricResponse(val dayOfWeek: Int, val hourBucket: Int, val voteCount: Int)
 
 @Serializable
-data class CreateVoteRequest(val shopId: String, val category: String? = null, val otherCategory: String? = null, val frequency: String? = null)
+data class CreateVoteRequest(
+    val shopId: String? = null,
+    val localId: String? = null,
+    val category: String? = null,
+    val otherCategory: String? = null,
+    val otherText: String? = null,
+    val frequency: String? = null,
+    val clientToken: String? = null,
+    val fingerprintHash: String? = null,
+) {
+    fun resolvedShopId(): String = shopId ?: localId ?: throw IllegalArgumentException("shopId is required")
+    fun resolvedOther(): String? = otherCategory ?: otherText
+}
+
+@Serializable
+data class ReportRentedResponse(val shopId: String, val reportCount: Int, val listingStatus: String)
 
 @Serializable
 data class VoteResponse(val id: String, val category: String, val classified: Boolean)
@@ -83,6 +105,8 @@ data class CreateShopRequest(
     val surfaceAreaM2: Int = 0,
     val rentalPrice: String = "",
     val agency: String = "",
+    val contactPhone: String = "",
+    val contactEmail: String = "",
     val placeId: String? = null,
     val locationOverrideUsed: Boolean = false,
     val geoResolutionId: String? = null,
