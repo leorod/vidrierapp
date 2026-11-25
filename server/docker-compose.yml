@@ -1,0 +1,79 @@
+services:
+  # ─────────────────────────────────────────────────────────────
+  # PostgreSQL 16 + PostGIS 3.4
+  # ─────────────────────────────────────────────────────────────
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: vidrierapp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vidrierapp}
+      POSTGRES_USER: ${POSTGRES_USER:-vidrierapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vidrierapp_secret}
+      # Ajuste de rendimiento para el desarrollo local
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${DB_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vidrierapp} -d ${POSTGRES_DB:-vidrierapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - vidrierapp_net
+
+  # ─────────────────────────────────────────────────────────────
+  # Flyway — ejecuta las migraciones en orden y sale
+  # ─────────────────────────────────────────────────────────────
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: vidrierapp_flyway
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-vidrierapp}
+      FLYWAY_USER: ${POSTGRES_USER:-vidrierapp}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-vidrierapp_secret}
+      FLYWAY_SCHEMAS: public
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      FLYWAY_BASELINE_ON_MIGRATE: "true"
+      FLYWAY_VALIDATE_ON_MIGRATE: "true"
+      FLYWAY_OUT_OF_ORDER: "false"
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+    command: migrate
+    networks:
+      - vidrierapp_net
+
+  # ─────────────────────────────────────────────────────────────
+  # Adminer — UI web ligera para inspeccionar la DB
+  # (solo desarrollo; comentar o remover en producción)
+  # ─────────────────────────────────────────────────────────────
+  adminer:
+    image: adminer:4-standalone
+    container_name: vidrierapp_adminer
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${ADMINER_HOST_PORT:-8080}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: pepa-linha
+    networks:
+      - vidrierapp_net
+
+volumes:
+  pgdata:
+    name: vidrierapp_pgdata
+
+networks:
+  vidrierapp_net:
+    name: vidrierapp_net
+    driver: bridge
