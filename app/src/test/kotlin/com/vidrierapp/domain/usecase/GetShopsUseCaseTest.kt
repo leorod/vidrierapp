@@ -15,6 +15,7 @@ class GetShopsUseCaseTest {
 
     private class FakeShopRepository : ShopRepository {
         var served: List<Shop>? = null
+        val requestedFilters = mutableListOf<String?>()
         val mockShops = listOf(
             Shop(
                 id = "1",
@@ -30,6 +31,7 @@ class GetShopsUseCaseTest {
             )
         )
         override fun getShops(categoryFilter: String?): Flow<Result<List<Shop>>> {
+            requestedFilters += categoryFilter
             return flowOf(Result.success(served ?: mockShops))
         }
 
@@ -67,6 +69,34 @@ class GetShopsUseCaseTest {
         val shops = GetShopsUseCase(repository)().first().getOrThrow()
 
         assertEquals(listOf("active", "review"), shops.map { it.id })
+    }
+
+    @Test
+    fun `invoke forwards the category filter to the repository`() = runTest {
+        val repository = FakeShopRepository()
+
+        GetShopsUseCase(repository)("cafeteria").first()
+
+        assertEquals(listOf<String?>("cafeteria"), repository.requestedFilters)
+    }
+
+    @Test
+    fun `invoke without a category requests every rubro`() = runTest {
+        val repository = FakeShopRepository()
+
+        GetShopsUseCase(repository)().first()
+
+        assertEquals(listOf<String?>(null), repository.requestedFilters)
+    }
+
+    @Test
+    fun `invoke returns an empty list when every shop is rented`() = runTest {
+        val repository = FakeShopRepository()
+        repository.served = repository.mockShops.map { it.copy(listingStatus = ShopStatus.RENTED) }
+
+        val shops = GetShopsUseCase(repository)("cafeteria").first().getOrThrow()
+
+        assertEquals(emptyList<Shop>(), shops)
     }
 
     @Test

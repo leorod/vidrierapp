@@ -25,12 +25,14 @@ class RetrofitShopRepository(
 ) : ShopRepository, CachedShopRepository {
 
     override fun getShops(categoryFilter: String?): Flow<Result<List<Shop>>> = flow {
-        try {
-            val dtoList = apiService.getShops(categoryFilter)
-            emit(Result.success(dtoList.map { it.toDomain() }))
+        val result = try {
+            Result.success(apiService.getShops(categoryFilter).map { it.toDomain() })
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            emit(Result.failure(e))
+            Result.failure(e)
         }
+        emit(result)
     }
 
     override fun getShopDetail(shopId: String): Flow<Result<Shop>> = flow {

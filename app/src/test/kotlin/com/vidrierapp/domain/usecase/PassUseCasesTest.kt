@@ -77,6 +77,30 @@ class PassUseCasesTest {
     }
 
     @Test
+    fun `access is unlocked one millisecond before the trial ends`() = runTest {
+        val repository = FakePassRepository(PassState(trialStartedAt = 0L))
+
+        val access = ObservePassAccessUseCase(repository) { TRIAL_DURATION_MILLIS - 1 }().first()
+
+        assertEquals(PassAccess(hasActivePass = true, trialAvailable = false), access)
+    }
+
+    @Test
+    fun `trial lasts exactly three days`() {
+        assertEquals(3L * 24 * 60 * 60 * 1000, TRIAL_DURATION_MILLIS)
+    }
+
+    @Test
+    fun `purchased pass is active one millisecond before thirty days and locked at thirty days`() = runTest {
+        val repository = FakePassRepository()
+        PurchasePassUseCase(repository) { 500L }()
+
+        assertEquals(30L * 24 * 60 * 60 * 1000, PASS_DURATION_MILLIS)
+        assertTrue(repository.state.value.isPassActive(500L + PASS_DURATION_MILLIS - 1))
+        assertFalse(repository.state.value.isPassActive(500L + PASS_DURATION_MILLIS))
+    }
+
+    @Test
     fun `access is locked on a fresh install and trial is available`() = runTest {
         val access = ObservePassAccessUseCase(FakePassRepository()) { 0L }().first()
 
