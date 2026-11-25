@@ -1,5 +1,9 @@
 package com.vidrierapp.presentation.detail
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.heading
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,7 +47,11 @@ private const val PERCENT_TO_FRACTION = 100f
 @Composable
 internal fun ShopHeader(shop: Shop) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(text = shop.address, style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = shop.address,
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.semantics { heading() }
+        )
         Text(text = shop.neighborhood, style = MaterialTheme.typography.titleMedium)
         Text(
             text = stringResource(R.string.detail_surface, shop.surfaceAreaM2),
@@ -90,7 +98,7 @@ internal fun SampleSummary(shop: Shop, showVotes: Boolean) {
     }
     if (parts.isNotEmpty()) {
         Text(
-            text = parts.joinToString(" · "),
+            text = parts.joinToString(stringResource(R.string.detail_sample_separator)),
             style = MaterialTheme.typography.titleMedium
         )
     }
@@ -100,10 +108,16 @@ internal fun SampleSummary(shop: Shop, showVotes: Boolean) {
 internal fun InfoCard(title: String, message: String? = null) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .semantics(mergeDescendants = true) {},
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
+            )
             if (message != null) {
                 Text(text = message, style = MaterialTheme.typography.bodyMedium)
             }
@@ -113,10 +127,15 @@ internal fun InfoCard(title: String, message: String? = null) {
 
 @Composable
 internal fun CollectingSampleCard(votes: Int) {
+    val collectingState = stringResource(R.string.detail_sample_state_collecting)
     DimmedContent(
         modifier = Modifier
             .fillMaxWidth()
             .testTag(COLLECTING_SAMPLE_TAG)
+            .semantics(mergeDescendants = true) {
+                stateDescription = collectingState
+                liveRegion = LiveRegionMode.Polite
+            }
     ) {
         Icon(
             imageVector = Icons.Filled.HourglassTop,
@@ -142,7 +161,11 @@ internal fun ShopMetrics(shop: Shop) {
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text = text, style = MaterialTheme.typography.titleMedium)
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.semantics { heading() }
+    )
 }
 
 @Composable

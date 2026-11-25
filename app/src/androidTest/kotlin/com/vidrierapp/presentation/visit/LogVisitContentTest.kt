@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
@@ -84,10 +85,26 @@ class LogVisitContentTest {
     fun typingNotesAndTappingSaveInvokeCallbacks() {
         var notes = ""
         var saves = 0
-        setContent(VisitUiState(shopId = "shop-1"), onNotes = { notes = it }, onSave = { saves++ })
+        composeTestRule.setContent {
+            var state by remember { mutableStateOf(VisitUiState(shopId = "shop-1")) }
+            VidrierAppTheme {
+                LogVisitContent(
+                    uiState = state,
+                    onBackClick = {},
+                    onNotesChange = {
+                        notes = it
+                        state = state.copy(notes = it)
+                    },
+                    onAddressChange = {},
+                    onIncrementPedestrians = {},
+                    onDecrementPedestrians = {},
+                    onSaveClick = { saves++ }
+                )
+            }
+        }
 
         composeTestRule.onNodeWithText(context.getString(R.string.visit_notes_label)).performTextInput("hola")
-        composeTestRule.onNodeWithText(context.getString(R.string.visit_btn_submit)).performClick()
+        composeTestRule.onNodeWithText(context.getString(R.string.visit_btn_submit)).performScrollTo().performClick()
 
         assertEquals("hola", notes)
         assertEquals(1, saves)

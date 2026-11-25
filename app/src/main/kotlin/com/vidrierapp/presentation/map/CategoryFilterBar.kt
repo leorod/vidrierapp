@@ -62,6 +62,7 @@ private fun CategoryChip(
     onClick: () -> Unit
 ) {
     val activeDescription = stringResource(R.string.map_filter_active)
+    val inactiveDescription = stringResource(R.string.map_filter_inactive)
     FilterChip(
         selected = selected,
         onClick = onClick,
@@ -80,7 +81,7 @@ private fun CategoryChip(
         ),
         modifier = Modifier
             .minTouchTarget()
-            .semantics { if (selected) stateDescription = activeDescription }
+            .semantics { stateDescription = if (selected) activeDescription else inactiveDescription }
     )
 }
 

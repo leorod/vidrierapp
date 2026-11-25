@@ -61,11 +61,7 @@ class ErrorStateTest {
         }
 
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.action_retry_desc)).assertExists()
-        val description = context.getString(
-            R.string.status_error_desc,
-            context.getString(R.string.status_error_title),
-            context.getString(R.string.status_error_message)
-        )
-        composeTestRule.onNodeWithContentDescription(description).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.status_error_title)).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.status_error_message)).assertExists()
     }
 }

@@ -16,7 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,7 +36,6 @@ fun ErrorState(
         if (isOffline) R.string.status_error_offline_message else R.string.status_error_message
     )
     val title = stringResource(R.string.status_error_title)
-    val description = stringResource(R.string.status_error_desc, title, message)
     val retryDescription = stringResource(R.string.action_retry_desc)
     Box(
         modifier = modifier
@@ -54,12 +56,15 @@ fun ErrorState(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.semantics { contentDescription = description }
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    liveRegion = LiveRegionMode.Polite
+                }
             ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { heading() }
                 )
                 Text(
                     text = message,

@@ -60,6 +60,6 @@ class OfflineBannerTest {
             VidrierAppTheme { OfflineBanner(onVisitsClick = {}) }
         }
 
-        composeTestRule.onNodeWithContentDescription(context.getString(R.string.offline_banner_desc)).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.offline_banner_message)).assertExists()
     }
 }

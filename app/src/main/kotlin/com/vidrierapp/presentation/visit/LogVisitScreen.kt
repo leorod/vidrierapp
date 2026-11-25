@@ -1,5 +1,7 @@
 package com.vidrierapp.presentation.visit
 
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -124,6 +126,8 @@ fun LogVisitContent(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val haptics = LocalHapticFeedback.current
+    val incrementLabel = stringResource(R.string.visit_pedestrian_increment_desc)
+    val decrementLabel = stringResource(R.string.visit_pedestrian_decrement_desc)
     val takePhotoDescription = stringResource(R.string.visit_btn_take_photo_desc)
     val totalDescription = pluralStringResource(
         R.plurals.visit_pedestrian_total_desc,
@@ -181,7 +185,8 @@ fun LogVisitContent(
             }
             Text(
                 text = stringResource(R.string.visit_pedestrian_label),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -208,6 +213,16 @@ fun LogVisitContent(
                         .semantics {
                             contentDescription = totalDescription
                             liveRegion = LiveRegionMode.Polite
+                            customActions = listOf(
+                                CustomAccessibilityAction(incrementLabel) {
+                                    onIncrementPedestrians()
+                                    true
+                                },
+                                CustomAccessibilityAction(decrementLabel) {
+                                    onDecrementPedestrians()
+                                    true
+                                }
+                            )
                         },
                     style = MaterialTheme.typography.displayLarge,
                     fontWeight = FontWeight.Bold,
@@ -240,7 +255,8 @@ fun LogVisitContent(
             )
             Text(
                 text = stringResource(R.string.visit_photos_label),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
             )
             OutlinedButton(
                 onClick = onAddPhotoClick,
@@ -280,7 +296,8 @@ fun LogVisitContent(
                 Text(
                     text = stringResource(R.string.visit_save_error),
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive }
                 )
             }
             Button(
@@ -324,6 +341,7 @@ fun PastVisitsSection(visits: List<Visit>, modifier: Modifier = Modifier) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .semantics(mergeDescendants = true) {}
                         .padding(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {

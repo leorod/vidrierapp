@@ -119,7 +119,7 @@ class ShopDetailViewModel(
                     },
                     onFailure = { error ->
                         _uiState.value = ShopDetailUiState.Error(
-                            message = error.message ?: "Unknown error",
+                            message = error.message.orEmpty(),
                             isOffline = !networkMonitor.isOnline.first()
                         )
                     }
