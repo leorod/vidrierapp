@@ -90,7 +90,7 @@
 
   function row(shop) {
     var tr = document.createElement('tr');
-    [shop.address, shop.neighborhood, String(shop.totalVotes)].forEach(function (text) {
+    [shop.address, shop.neighborhood, String(shop.totalVotes || 0)].forEach(function (text) {
       var td = document.createElement('td');
       td.textContent = text;
       tr.appendChild(td);
