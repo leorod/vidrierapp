@@ -61,3 +61,51 @@ data class TrialRequest(val deviceId: String)
 
 @Serializable
 data class TrialResponse(val deviceId: String, val status: String, val expiresAt: String, val metricsAvailable: Boolean)
+
+@Serializable
+data class MockCheckoutRequest(val deviceId: String, val paymentToken: String)
+
+@Serializable
+data class MockCheckoutResponse(
+    val paymentId: String,
+    val providerReference: String,
+    val status: String,
+    val failureReason: String? = null,
+    val pass: TrialResponse? = null,
+)
+
+@Serializable
+data class CreateShopRequest(
+    val address: String,
+    val latitude: Double,
+    val longitude: Double,
+    val neighborhood: String = "",
+    val surfaceAreaM2: Int = 0,
+    val rentalPrice: String = "",
+    val agency: String = "",
+    val placeId: String? = null,
+    val locationOverrideUsed: Boolean = false,
+    val geoResolutionId: String? = null,
+    val confirmFarLocation: Boolean = false,
+)
+
+@Serializable
+data class GeoResolveRequest(val placeId: String)
+
+@Serializable
+data class GeoResolveResponse(val resolutionId: String, val latitude: Double, val longitude: Double, val radiusMeters: Int = 150)
+
+@Serializable
+data class AddCategoryAliasRequest(val alias: String, val canonicalSlug: String)
+
+@Serializable
+data class ReclassifyVotesRequest(val alias: String, val canonicalSlug: String)
+
+@Serializable
+data class UnclassifiedCategoryResponse(val rawCategory: String, val voteCount: Int)
+
+@Serializable
+data class UpdateShopStatusRequest(val status: String)
+
+@Serializable
+data class ZoneSummaryResponse(val neighborhood: String, val totalVotes: Int, val shopsWithVotes: Int, val topCategoryName: String? = null)

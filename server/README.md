@@ -61,8 +61,25 @@ Para ejecutar la API sin Docker, desde la raíz del repositorio usar `./gradlew 
 | `POST` | `/api/v1/votes` | Voto anónimo. Requiere `X-Fingerprint-Hash`; acepta `X-Browser-Token`. |
 | `POST` | `/api/v1/shops/{id}/report-rented` | Incrementa reportes y pasa a revisión al tercer reporte. |
 | `POST` | `/api/v1/auth/trial` | Inicia o consulta el trial único por dispositivo. |
+| `POST` | `/api/v1/payments/checkout` | Procesa un checkout simulado y activa el pase de 30 días solo si se aprueba. |
+| `GET` | `/api/v1/zones/summary` | Reportería histórica agregada por barrio, incluidos locales alquilados. |
+| `POST` | `/api/v1/admin/shops` | Alta de local; requiere `Authorization: Bearer $ADMIN_API_TOKEN`. |
+| `POST` | `/api/v1/admin/geo/resolve` | Resuelve `placeId` vía Google y entrega un centro transitorio para el pin manual. |
+| `POST` | `/api/v1/admin/shops/{id}/status` | Actualiza estado/revalida un local; requiere token admin. |
+| `POST` | `/api/v1/admin/maintenance/run` | Fuerza caducidad a 60 días y refresca agregados; requiere token admin. |
+| `GET` | `/api/v1/admin/categories/unclassified` | Lista términos libres pendientes de curaduría. |
+| `POST` | `/api/v1/admin/categories/aliases` | Crea o actualiza un alias de rubro. |
+| `POST` | `/api/v1/admin/categories/reclassify` | Reclasifica votos pendientes para un alias y refresca agregados. |
 
 El detalle retorna métricas únicamente cuando el dispositivo tiene acceso vigente y el local alcanzó 15 votos. El normalizador determinístico limpia texto libre, consulta alias del catálogo y aplica Levenshtein antes de registrar un voto como no clasificado.
+
+Los votos requieren los headers `X-Fingerprint-Hash` y `X-Browser-Token`. El backend rechaza duplicados por token o huella durante 30 días y aplica un límite suave de 20 solicitudes por IP hasheada por hora para preservar el uso compartido de redes móviles. El mantenimiento se ejecuta cada hora y también puede ejecutarse explícitamente desde el endpoint admin.
+
+Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con el `placeId` de Google. El resultado contiene un `resolutionId` que se envía al crear el local junto al pin manual. El backend mantiene esa resolución solo 15 minutos, valida que el pin esté a 150 m o menos y nunca persiste las coordenadas recibidas de Google. Usar `confirmFarLocation: true` para la salida de emergencia documentada en el ADR; queda auditada como `locationOverrideUsed`.
+
+## Pago simulado
+
+`POST /api/v1/payments/checkout` recibe `deviceId` y `paymentToken`. No recibe ni almacena datos de tarjeta. Usar `mock_approve` para simular un cobro aprobado y activar el pase por 30 días; usar `mock_decline` para simular un rechazo. Cada intento queda auditado en `mock_payments`, incluyendo importe simulado y referencia del proveedor mock.
 
 ## Modelo de datos
 
