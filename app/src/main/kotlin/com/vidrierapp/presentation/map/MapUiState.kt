@@ -13,7 +13,7 @@ sealed interface MapUiState {
         val selectedCategoryFilter: String? = null,
         val selectedShop: Shop? = null
     ) : MapUiState
-    data class Error(val message: String) : MapUiState
+    data class Error(val message: String, val isOffline: Boolean = false) : MapUiState
 }
 
 enum class LocationPermission { Unknown, Granted, Denied }

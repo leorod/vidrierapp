@@ -2,6 +2,7 @@ package com.vidrierapp.presentation.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vidrierapp.domain.network.NetworkMonitor
 import com.vidrierapp.domain.usecase.GetShopDetailUseCase
 import com.vidrierapp.domain.usecase.ObservePassAccessUseCase
 import com.vidrierapp.domain.usecase.PurchasePassUseCase
@@ -13,6 +14,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
@@ -27,7 +29,8 @@ class ShopDetailViewModel(
     private val startTrialUseCase: StartTrialUseCase,
     private val purchasePassUseCase: PurchasePassUseCase,
     private val reportRentedUseCase: ReportRentedUseCase,
-    observeReportedShopsUseCase: ObserveReportedShopsUseCase
+    observeReportedShopsUseCase: ObserveReportedShopsUseCase,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ShopDetailUiState>(ShopDetailUiState.Loading)
@@ -115,7 +118,10 @@ class ShopDetailViewModel(
                         )
                     },
                     onFailure = { error ->
-                        _uiState.value = ShopDetailUiState.Error(error.message ?: "Unknown error")
+                        _uiState.value = ShopDetailUiState.Error(
+                            message = error.message ?: "Unknown error",
+                            isOffline = !networkMonitor.isOnline.first()
+                        )
                     }
                 )
             }

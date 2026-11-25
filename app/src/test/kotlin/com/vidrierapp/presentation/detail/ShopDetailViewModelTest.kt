@@ -1,6 +1,7 @@
 package com.vidrierapp.presentation.detail
 
 import com.vidrierapp.domain.model.Shop
+import com.vidrierapp.domain.network.FakeNetworkMonitor
 import com.vidrierapp.domain.repository.ShopRepository
 import com.vidrierapp.domain.model.PASS_DURATION_MILLIS
 import com.vidrierapp.domain.model.PassState
@@ -58,13 +59,16 @@ class ShopDetailViewModelTest {
 
     private val reportedShops = FakeReportedShopsRepository()
 
+    private val networkMonitor = FakeNetworkMonitor()
+
     private fun viewModel(repository: ShopRepository) = ShopDetailViewModel(
         getShopDetailUseCase = GetShopDetailUseCase(repository),
         observePassAccessUseCase = ObservePassAccessUseCase(passRepository) { now },
         startTrialUseCase = StartTrialUseCase(passRepository) { now },
         purchasePassUseCase = PurchasePassUseCase(passRepository) { now },
         reportRentedUseCase = ReportRentedUseCase(repository, reportedShops),
-        observeReportedShopsUseCase = ObserveReportedShopsUseCase(reportedShops)
+        observeReportedShopsUseCase = ObserveReportedShopsUseCase(reportedShops),
+        networkMonitor = networkMonitor
     )
 
     private fun shop(id: String) = Shop(
@@ -318,5 +322,32 @@ class ShopDetailViewModelTest {
         viewModel.confirmReportRented()
 
         assertTrue(repository.reportedIds.isEmpty())
+    }
+
+    @Test
+    fun `failure while online is not flagged offline`() {
+        val repository = FakeShopRepository()
+        val vm = viewModel(repository)
+
+        vm.loadShop("a")
+
+        assertEquals(false, (vm.uiState.value as ShopDetailUiState.Error).isOffline)
+    }
+
+    @Test
+    fun `failure while offline is flagged offline and retry re-requests the same shop`() {
+        val repository = FakeShopRepository()
+        networkMonitor.online.value = false
+        val vm = viewModel(repository)
+
+        vm.loadShop("a")
+        assertEquals(true, (vm.uiState.value as ShopDetailUiState.Error).isOffline)
+
+        networkMonitor.online.value = true
+        repository.result = Result.success(shop("a"))
+        vm.retry()
+
+        assertEquals(listOf("a", "a"), repository.requestedIds)
+        assertTrue(vm.uiState.value is ShopDetailUiState.Success)
     }
 }

@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vidrierapp.R
+import com.vidrierapp.presentation.common.ErrorState
 import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.presentation.common.AppViewModelProvider
@@ -147,24 +148,11 @@ fun ShopDetailContent(
                 )
             }
 
-            is ShopDetailUiState.Error -> CenteredColumn(Modifier.padding(innerPadding)) {
-                Text(
-                    text = stringResource(R.string.status_error_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = stringResource(R.string.status_error_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
-                Button(
-                    onClick = onRetry,
-                    modifier = Modifier.heightIn(min = MIN_TOUCH_TARGET)
-                ) {
-                    Text(text = stringResource(R.string.action_retry))
-                }
-            }
+            is ShopDetailUiState.Error -> ErrorState(
+                isOffline = uiState.isOffline,
+                onRetry = onRetry,
+                modifier = Modifier.padding(innerPadding)
+            )
 
             is ShopDetailUiState.Success -> ShopDetailBody(
                 shop = uiState.shop,

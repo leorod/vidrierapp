@@ -1,5 +1,8 @@
 package com.vidrierapp.presentation.map
 
+import com.vidrierapp.domain.network.FakeNetworkMonitor
+import com.vidrierapp.domain.usecase.FakeCachedShopRepository
+import com.vidrierapp.domain.usecase.GetCachedShopsUseCase
 import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.domain.repository.ShopRepository
@@ -61,7 +64,7 @@ class MapViewModelTest {
     }
 
     private fun createViewModel(repository: FakeShopRepository) =
-        MapViewModel(GetShopsUseCase(repository), FakeLocationProvider(null))
+        MapViewModel(GetShopsUseCase(repository), FakeLocationProvider(null), GetCachedShopsUseCase(FakeCachedShopRepository()), FakeNetworkMonitor())
 
     @Test
     fun `loads shops on init`() {
