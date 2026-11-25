@@ -243,6 +243,18 @@ class ShopDetailViewModelTest {
     }
 
     @Test
+    fun `startTrial requests the shop detail again to get the metrics`() {
+        passRepository.state.value = PassState()
+        val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }
+        val viewModel = viewModel(repository)
+        viewModel.loadShop("1")
+
+        viewModel.startTrial()
+
+        assertEquals(listOf("1", "1"), repository.requestedIds)
+    }
+
+    @Test
     fun `purchasePass unlocks the loaded shop after the trial expired`() {
         now = 4L * 24 * 60 * 60 * 1000
         val repository = FakeShopRepository().apply { result = Result.success(shop("1")) }

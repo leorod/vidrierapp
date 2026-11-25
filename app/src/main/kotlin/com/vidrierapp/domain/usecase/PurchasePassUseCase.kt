@@ -12,7 +12,7 @@ class PurchasePassUseCase(
     suspend operator fun invoke() {
         val state = repository.passState.first()
         val start = maxOf(clock(), state.passExpiresAt ?: Long.MIN_VALUE)
-        repository.savePassState(state.copy(passExpiresAt = start + PASS_DURATION_MILLIS))
         onPurchased()
+        repository.savePassState(state.copy(passExpiresAt = start + PASS_DURATION_MILLIS))
     }
 }

@@ -49,7 +49,10 @@
     <string name="detail_section_frequency">Frecuencia Estimada de Compra</string>
     <string name="detail_section_contact">Contacto Inmobiliaria</string>
     <string name="detail_votes_breakdown">Desglose de Votos por Rubro</string>
-    <string name="detail_votes_count">%1$d votos (%2$.1f%%)</string>
+    <plurals name="detail_votes_count">
+        <item quantity="one">%1$d voto (%2$.1f%%)</item>
+        <item quantity="other">%1$d votos (%2$.1f%%)</item>
+    </plurals>
     <string name="detail_surface">Superficie: %1$d m²</string>
     <string name="detail_price">Alquiler mensual: %1$s</string>
     <string name="detail_contact_agency">Inmobiliaria: %1$s</string>
@@ -80,15 +83,34 @@
     <string name="detail_sample_state_collecting">Muestra en recolección</string>
     <string name="detail_sample_votes">%1$d votos acumulados</string>
     <string name="detail_sample_last_vote">Último voto %1$s</string>
+    <string name="detail_last_vote_just_now">recién</string>
+    <plurals name="detail_last_vote_minutes">
+        <item quantity="one">hace %1$d minuto</item>
+        <item quantity="other">hace %1$d minutos</item>
+    </plurals>
+    <plurals name="detail_last_vote_hours">
+        <item quantity="one">hace %1$d hora</item>
+        <item quantity="other">hace %1$d horas</item>
+    </plurals>
+    <plurals name="detail_last_vote_days">
+        <item quantity="one">hace %1$d día</item>
+        <item quantity="other">hace %1$d días</item>
+    </plurals>
     <string name="detail_sample_active_since">Activo desde %1$s</string>
     <string name="detail_sample_insufficient">Muestra insuficiente en recolección (%1$d/%2$d votos mínimos)</string>
-    <string name="detail_category_bar_desc">%1$s: %2$d votos, %3$.1f%% del total</string>
+    <plurals name="detail_category_bar_desc">
+        <item quantity="one">%1$s: %2$d voto, %3$.1f%% del total</item>
+        <item quantity="other">%1$s: %2$d votos, %3$.1f%% del total</item>
+    </plurals>
     <string name="detail_freq_daily">%1$d de %2$d visitarían a diario</string>
     <string name="detail_freq_weekly">%1$d de %2$d visitarían semanalmente</string>
     <string name="detail_freq_occasional">%1$d de %2$d visitarían ocasionalmente</string>
     <string name="detail_section_weekday">Votos por día de la semana</string>
     <string name="detail_section_time_slot">Votos por franja horaria</string>
-    <string name="detail_distribution_bar_desc">%1$s: %2$d votos</string>
+    <plurals name="detail_distribution_bar_desc">
+        <item quantity="one">%1$s: %2$d voto</item>
+        <item quantity="other">%1$s: %2$d votos</item>
+    </plurals>
     <string name="weekday_monday">Lun</string>
     <string name="weekday_tuesday">Mar</string>
     <string name="weekday_wednesday">Mié</string>

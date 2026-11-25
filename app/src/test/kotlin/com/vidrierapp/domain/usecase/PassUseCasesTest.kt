@@ -59,6 +59,28 @@ class PassUseCasesTest {
     }
 
     @Test
+    fun `trial notifies the backend before saving the local state`() = runTest {
+        val repository = FakePassRepository()
+        var savedWhenNotified: Long? = -1L
+
+        StartTrialUseCase(repository, onStarted = { savedWhenNotified = repository.state.value.trialStartedAt }, clock = { 100L })()
+
+        assertEquals(null, savedWhenNotified)
+        assertEquals(100L, repository.state.value.trialStartedAt)
+    }
+
+    @Test
+    fun `purchase notifies the backend before saving the local state`() = runTest {
+        val repository = FakePassRepository()
+        var savedWhenNotified: Long? = -1L
+
+        PurchasePassUseCase(repository, onPurchased = { savedWhenNotified = repository.state.value.passExpiresAt }, clock = { 100L })()
+
+        assertEquals(null, savedWhenNotified)
+        assertEquals(100L + PASS_DURATION_MILLIS, repository.state.value.passExpiresAt)
+    }
+
+    @Test
     fun `purchase sets expiry thirty days from now`() = runTest {
         val repository = FakePassRepository()
 
