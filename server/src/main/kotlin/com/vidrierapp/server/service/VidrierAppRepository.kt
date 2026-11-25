@@ -6,13 +6,18 @@ import com.vidrierapp.server.model.HourlyMetricResponse
 import com.vidrierapp.server.model.ShopDetailResponse
 import com.vidrierapp.server.model.ShopSummaryResponse
 import com.vidrierapp.server.model.TrialResponse
+import com.vidrierapp.server.model.CreateShopRequest
+import com.vidrierapp.server.model.ZoneSummaryResponse
+import com.vidrierapp.server.model.MockCheckoutResponse
+import com.vidrierapp.server.model.UnclassifiedCategoryResponse
+import java.security.MessageDigest
 import java.sql.ResultSet
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.sql.DataSource
 
-class VidrierAppRepository(private val dataSource: DataSource) {
+open class VidrierAppRepository(private val dataSource: DataSource) {
     fun shops(category: String?, bounds: Bounds?): List<ShopSummaryResponse> = dataSource.connection.use { connection ->
         val sql = buildString {
             append("SELECT s.id, s.address_text, s.status, ST_Y(s.location::geometry) latitude, ST_X(s.location::geometry) longitude, s.attributes, COALESCE(vs.vote_count, 0) vote_count, vs.top_category FROM shops s LEFT JOIN mv_shop_vote_summary vs ON vs.shop_id = s.id WHERE s.status = 'AVAILABLE'")
@@ -37,22 +42,22 @@ class VidrierAppRepository(private val dataSource: DataSource) {
         shop.copy(metricsAvailable = true, votes = categoryMetrics(connection, id, shop.totalVotes), frequency = frequencyMetrics(connection, id), hourlyDistribution = hourlyMetrics(connection, id))
     }
 
-    fun categoryAliases(): Map<String, String> = dataSource.connection.use { connection ->
+    open fun categoryAliases(): Map<String, String> = dataSource.connection.use { connection ->
         connection.prepareStatement("SELECT alias, canonical_slug FROM category_aliases").use { statement ->
             statement.executeQuery().use { results -> buildMap { while (results.next()) put(results.getString("alias"), results.getString("canonical_slug")) } }
         }
     }
 
-    fun submitVote(shopId: UUID, category: NormalizedCategory, frequency: String?, fingerprint: String, browserToken: String?): UUID = dataSource.connection.use { connection ->
+    fun submitVote(shopId: UUID, category: NormalizedCategory, frequency: String?, fingerprint: String, browserToken: String, ipAddress: String): UUID = dataSource.connection.use { connection ->
         connection.autoCommit = false
         try {
             connection.prepareStatement("SELECT status FROM shops WHERE id = ? FOR UPDATE").use { statement -> statement.setObject(1, shopId); statement.executeQuery().use { results -> if (!results.next()) throw NoSuchElementException("Shop not found"); if (results.getString(1) != "AVAILABLE") throw IllegalArgumentException("Shop is not accepting votes") } }
-            connection.prepareStatement("SELECT fn_vote_is_duplicate(?, ?)").use { statement -> statement.setString(1, fingerprint); statement.setObject(2, shopId); statement.executeQuery().use { if (it.next() && it.getBoolean(1)) throw IllegalArgumentException("A vote was already submitted for this shop") } }
+            connection.prepareStatement("SELECT EXISTS (SELECT 1 FROM votes WHERE shop_id = ? AND created_at >= NOW() - INTERVAL '30 days' AND (fingerprint_hash = ? OR browser_token = ?))").use { statement -> statement.setObject(1, shopId); statement.setString(2, fingerprint); statement.setString(3, browserToken); statement.executeQuery().use { if (it.next() && it.getBoolean(1)) throw IllegalArgumentException("A vote was already submitted for this shop") } }
+            enforceIpRateLimit(connection, ipAddress)
             val voteId = UUID.randomUUID()
             connection.prepareStatement("INSERT INTO votes (id, shop_id, category, raw_category_input, category_status, frequency, day_of_week, hour_bucket, fingerprint_hash, browser_token) VALUES (?, ?, ?, ?, ?::category_status, ?::visit_frequency, EXTRACT(DOW FROM NOW()), FLOOR(EXTRACT(HOUR FROM NOW()) / 2) * 2, ?, ?)").use { statement ->
                 statement.setObject(1, voteId); statement.setObject(2, shopId); statement.setString(3, category.slug); statement.setString(4, category.rawInput); statement.setString(5, if (category.classified) "CLASSIFIED" else "UNCLASSIFIED"); statement.setString(6, frequency?.uppercase()); statement.setString(7, fingerprint); statement.setString(8, browserToken); statement.executeUpdate()
             }
-            connection.createStatement().use { it.execute("REFRESH MATERIALIZED VIEW mv_shop_vote_summary"); it.execute("REFRESH MATERIALIZED VIEW mv_shop_hourly_distribution") }
             connection.commit()
             voteId
         } catch (error: Exception) { connection.rollback(); throw error } finally { connection.autoCommit = true }
@@ -67,9 +72,72 @@ class VidrierAppRepository(private val dataSource: DataSource) {
         connection.prepareStatement("SELECT status::text, COALESCE(pass_expires_at, trial_expires_at) expires_at FROM device_trials WHERE device_id = ?").use { statement -> statement.setString(1, deviceId); statement.executeQuery().use { results -> results.next(); trialResponse(deviceId, results.getString(1), results.getObject(2, Instant::class.java)) } }
     }
 
+    fun checkoutPass(deviceId: String, processor: MockPaymentProcessor, paymentToken: String): MockCheckoutResponse = dataSource.connection.use { connection ->
+        val decision = processor.charge(paymentToken)
+        val paymentId = UUID.randomUUID()
+        val reference = processor.providerReference()
+        connection.autoCommit = false
+        try {
+            connection.prepareStatement("INSERT INTO mock_payments (id, device_id, provider_reference, amount_cents, status, failure_reason) VALUES (?, ?, ?, 500000, ?, ?)").use { statement ->
+                statement.setObject(1, paymentId); statement.setString(2, deviceId); statement.setString(3, reference); statement.setString(4, if (decision.approved) "APPROVED" else "DECLINED"); statement.setString(5, decision.failureReason); statement.executeUpdate()
+            }
+            val pass = if (decision.approved) activatePass(connection, deviceId) else null
+            connection.commit()
+            MockCheckoutResponse(paymentId.toString(), reference, if (decision.approved) "APPROVED" else "DECLINED", decision.failureReason, pass)
+        } catch (error: Exception) { connection.rollback(); throw error } finally { connection.autoCommit = true }
+    }
+
     fun hasActiveAccess(deviceId: String?): Boolean {
         if (deviceId.isNullOrBlank()) return false
         return dataSource.connection.use { connection -> connection.prepareStatement("SELECT EXISTS (SELECT 1 FROM device_trials WHERE device_id = ? AND COALESCE(pass_expires_at, trial_expires_at) > NOW())").use { statement -> statement.setString(1, deviceId); statement.executeQuery().use { it.next(); it.getBoolean(1) } } }
+    }
+
+    fun createShop(request: CreateShopRequest): ShopSummaryResponse = dataSource.connection.use { connection ->
+        require(request.latitude in -90.0..90.0 && request.longitude in -180.0..180.0) { "Invalid coordinates" }
+        val attributes = "{\"neighborhood\":\"${jsonEscape(request.neighborhood)}\",\"surface_m2\":${request.surfaceAreaM2},\"rental_price\":\"${jsonEscape(request.rentalPrice)}\",\"agency\":\"${jsonEscape(request.agency)}\"}"
+        val id = UUID.randomUUID()
+        connection.prepareStatement("INSERT INTO shops (id, address_text, place_id, location, location_override_used, attributes, created_by) VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ?, ?::jsonb, 'admin')").use { statement ->
+            statement.setObject(1, id); statement.setString(2, request.address); statement.setString(3, request.placeId); statement.setDouble(4, request.longitude); statement.setDouble(5, request.latitude); statement.setBoolean(6, request.locationOverrideUsed); statement.setString(7, attributes); statement.executeUpdate()
+        }
+        ShopSummaryResponse(id.toString(), request.address, request.neighborhood, request.latitude, request.longitude, request.surfaceAreaM2, request.rentalPrice, status = "AVAILABLE")
+    }
+
+    fun addCategoryAlias(alias: String, canonicalSlug: String) = dataSource.connection.use { connection ->
+        require(alias.isNotBlank()) { "alias is required" }
+        connection.prepareStatement("INSERT INTO category_aliases (alias, canonical_slug) VALUES (?, ?) ON CONFLICT (alias) DO UPDATE SET canonical_slug = EXCLUDED.canonical_slug").use { statement -> statement.setString(1, alias); statement.setString(2, canonicalSlug); statement.executeUpdate() }
+    }
+
+    fun reclassifyVotes(alias: String, canonicalSlug: String): Int = dataSource.connection.use { connection ->
+        connection.autoCommit = false
+        try {
+            connection.prepareStatement("INSERT INTO category_aliases (alias, canonical_slug) VALUES (?, ?) ON CONFLICT (alias) DO UPDATE SET canonical_slug = EXCLUDED.canonical_slug").use { statement -> statement.setString(1, alias); statement.setString(2, canonicalSlug); statement.executeUpdate() }
+            val updated = connection.prepareStatement("UPDATE votes SET category = ?, category_status = 'CLASSIFIED'::category_status WHERE category_status = 'UNCLASSIFIED' AND lower(raw_category_input) = lower(?)").use { statement -> statement.setString(1, canonicalSlug); statement.setString(2, alias); statement.executeUpdate() }
+            connection.commit()
+            updated
+        } catch (error: Exception) { connection.rollback(); throw error } finally { connection.autoCommit = true }
+    }
+
+    fun unclassifiedCategories(): List<UnclassifiedCategoryResponse> = dataSource.connection.use { connection ->
+        connection.prepareStatement("SELECT raw_category_input, COUNT(*)::int vote_count FROM votes WHERE category_status = 'UNCLASSIFIED' AND raw_category_input IS NOT NULL GROUP BY raw_category_input ORDER BY vote_count DESC, raw_category_input LIMIT 100").use { statement -> statement.executeQuery().use { results -> buildList { while (results.next()) add(UnclassifiedCategoryResponse(results.getString(1), results.getInt(2))) } } }
+    }
+
+    fun updateShopStatus(id: UUID, status: String) = dataSource.connection.use { connection ->
+        require(status in setOf("AVAILABLE", "UNDER_REVIEW", "RENTED")) { "Invalid shop status" }
+        connection.prepareStatement("UPDATE shops SET status = ?::shop_status, last_verified_at = CASE WHEN ? = 'AVAILABLE' THEN NOW() ELSE last_verified_at END, updated_by = 'admin' WHERE id = ?").use { statement -> statement.setString(1, status); statement.setString(2, status); statement.setObject(3, id); if (statement.executeUpdate() == 0) throw NoSuchElementException("Shop not found") }
+    }
+
+    fun expireStaleShops(): Int = dataSource.connection.use { connection ->
+        connection.prepareStatement("UPDATE shops SET status = 'UNDER_REVIEW', updated_by = 'maintenance' WHERE status = 'AVAILABLE' AND last_verified_at < NOW() - INTERVAL '60 days'").use { it.executeUpdate() }
+    }
+
+    fun expireAccessStatuses(): Int = dataSource.connection.use { connection ->
+        connection.prepareStatement("UPDATE device_trials SET status = CASE WHEN pass_expires_at IS NOT NULL AND pass_expires_at <= NOW() THEN 'PASS_EXPIRED'::trial_status WHEN pass_expires_at IS NULL AND trial_expires_at <= NOW() THEN 'TRIAL_EXPIRED'::trial_status ELSE status END WHERE (pass_expires_at IS NOT NULL AND pass_expires_at <= NOW() AND status <> 'PASS_EXPIRED') OR (pass_expires_at IS NULL AND trial_expires_at <= NOW() AND status <> 'TRIAL_EXPIRED')").use { it.executeUpdate() }
+    }
+
+    fun refreshAggregates() = dataSource.connection.use { connection -> connection.createStatement().use { statement -> statement.execute("REFRESH MATERIALIZED VIEW mv_shop_vote_summary"); statement.execute("REFRESH MATERIALIZED VIEW mv_shop_hourly_distribution") } }
+
+    fun zoneSummaries(): List<ZoneSummaryResponse> = dataSource.connection.use { connection ->
+        connection.prepareStatement("SELECT COALESCE(s.attributes->>'neighborhood', 'Sin barrio') neighborhood, COUNT(v.id)::int total_votes, COUNT(DISTINCT s.id) FILTER (WHERE v.id IS NOT NULL)::int shops_with_votes, MODE() WITHIN GROUP (ORDER BY v.category) FILTER (WHERE v.category_status = 'CLASSIFIED') top_category FROM shops s LEFT JOIN votes v ON v.shop_id = s.id GROUP BY COALESCE(s.attributes->>'neighborhood', 'Sin barrio') ORDER BY total_votes DESC").use { statement -> statement.executeQuery().use { results -> buildList { while (results.next()) add(ZoneSummaryResponse(results.getString(1), results.getInt(2), results.getInt(3), results.getString(4))) } } }
     }
 
     private fun categoryMetrics(connection: java.sql.Connection, id: UUID, total: Int) = query(connection, "SELECT v.category, COALESCE(c.label_es, v.category) label, COUNT(*) count FROM votes v LEFT JOIN categories c ON c.slug = v.category WHERE v.shop_id = ? AND v.category_status = 'CLASSIFIED' GROUP BY v.category, c.label_es ORDER BY count DESC", id) { CategoryMetricResponse(it.getString(1), it.getString(2), it.getInt(3), it.getInt(3) * 100f / total) }
@@ -81,6 +149,16 @@ class VidrierAppRepository(private val dataSource: DataSource) {
     private fun jsonString(json: String, key: String) = "\"$key\"\\s*:\\s*\"([^\"]*)\"".toRegex().find(json)?.groupValues?.get(1) ?: ""
     private fun jsonInt(json: String, key: String) = "\"$key\"\\s*:\\s*(\\d+)".toRegex().find(json)?.groupValues?.get(1)?.toIntOrNull() ?: 0
     private fun trialResponse(deviceId: String, status: String, expiresAt: Instant) = TrialResponse(deviceId, status, expiresAt.toString(), expiresAt.isAfter(Instant.now()))
+    private fun activatePass(connection: java.sql.Connection, deviceId: String): TrialResponse {
+        connection.prepareStatement("INSERT INTO device_trials (device_id, trial_expires_at, status, pass_activated_at, pass_expires_at) VALUES (?, NOW(), 'PASS_ACTIVE', NOW(), NOW() + INTERVAL '30 days') ON CONFLICT (device_id) DO UPDATE SET status = 'PASS_ACTIVE', pass_activated_at = NOW(), pass_expires_at = NOW() + INTERVAL '30 days'").use { statement -> statement.setString(1, deviceId); statement.executeUpdate() }
+        return connection.prepareStatement("SELECT status::text, pass_expires_at FROM device_trials WHERE device_id = ?").use { statement -> statement.setString(1, deviceId); statement.executeQuery().use { results -> results.next(); trialResponse(deviceId, results.getString(1), results.getObject(2, Instant::class.java)) } }
+    }
+    private fun enforceIpRateLimit(connection: java.sql.Connection, ipAddress: String) {
+        val ipHash = sha256(ipAddress)
+        connection.prepareStatement("INSERT INTO vote_rate_limits (ip_hash, window_started_at, request_count) VALUES (?, date_trunc('hour', NOW()), 1) ON CONFLICT (ip_hash, window_started_at) DO UPDATE SET request_count = vote_rate_limits.request_count + 1 RETURNING request_count").use { statement -> statement.setString(1, ipHash); statement.executeQuery().use { results -> results.next(); require(results.getInt(1) <= 20) { "Too many votes from this network; try again later" } } }
+    }
+    private fun sha256(value: String) = MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") { "%02x".format(it) }
+    private fun jsonEscape(value: String) = value.replace("\\", "\\\\").replace("\"", "\\\"")
 }
 
 data class Bounds(val lonMin: Double, val latMin: Double, val lonMax: Double, val latMax: Double)

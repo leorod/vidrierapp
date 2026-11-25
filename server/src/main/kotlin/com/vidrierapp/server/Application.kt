@@ -4,6 +4,9 @@ import com.vidrierapp.server.config.DatabaseFactory
 import com.vidrierapp.server.model.ErrorResponse
 import com.vidrierapp.server.routes.configureRouting
 import com.vidrierapp.server.service.CategoryNormalizer
+import com.vidrierapp.server.service.MaintenanceWorker
+import com.vidrierapp.server.service.MockPaymentProcessor
+import com.vidrierapp.server.service.GoogleGeocodingService
 import com.vidrierapp.server.service.VidrierAppRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -25,6 +28,8 @@ fun main() {
 fun Application.module() {
     val repository = VidrierAppRepository(DatabaseFactory.createDataSource())
     val normalizer = CategoryNormalizer(repository)
+    val adminToken = System.getenv("ADMIN_API_TOKEN") ?: ""
+    MaintenanceWorker(repository).start()
 
     install(CallLogging)
     install(CORS) {
@@ -37,6 +42,7 @@ fun Application.module() {
     install(StatusPages) {
         exception<IllegalArgumentException> { call, cause -> call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message ?: "Invalid request")) }
         exception<NoSuchElementException> { call, cause -> call.respond(HttpStatusCode.NotFound, ErrorResponse(cause.message ?: "Resource not found")) }
+        exception<SecurityException> { call, cause -> call.respond(HttpStatusCode.Unauthorized, ErrorResponse(cause.message ?: "Unauthorized")) }
     }
-    configureRouting(repository, normalizer)
+    configureRouting(repository, normalizer, MockPaymentProcessor(), GoogleGeocodingService(System.getenv("MAPS_API_KEY") ?: ""), adminToken)
 }
