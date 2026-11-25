@@ -40,6 +40,25 @@ class PassUseCasesTest {
     }
 
     @Test
+    fun `start trial notifies the callback only when it starts`() = runTest {
+        var notified = 0
+
+        StartTrialUseCase(FakePassRepository(), onStarted = { notified++ }, clock = { 100L })()
+        StartTrialUseCase(FakePassRepository(PassState(trialStartedAt = 1L)), onStarted = { notified++ }, clock = { 100L })()
+
+        assertEquals(1, notified)
+    }
+
+    @Test
+    fun `purchase notifies the callback`() = runTest {
+        var notified = 0
+
+        PurchasePassUseCase(FakePassRepository(), onPurchased = { notified++ }, clock = { 100L })()
+
+        assertEquals(1, notified)
+    }
+
+    @Test
     fun `purchase sets expiry thirty days from now`() = runTest {
         val repository = FakePassRepository()
 

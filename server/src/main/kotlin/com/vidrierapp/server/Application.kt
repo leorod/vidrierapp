@@ -4,10 +4,14 @@ import com.vidrierapp.server.config.DatabaseFactory
 import com.vidrierapp.server.model.ErrorResponse
 import com.vidrierapp.server.routes.configureRouting
 import com.vidrierapp.server.service.CategoryNormalizer
+import com.vidrierapp.server.service.DuplicateVoteException
+import com.vidrierapp.server.service.RateLimitExceededException
 import com.vidrierapp.server.service.MaintenanceWorker
 import com.vidrierapp.server.service.MockPaymentProcessor
 import com.vidrierapp.server.service.GoogleGeocodingService
 import com.vidrierapp.server.service.VidrierAppRepository
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -18,7 +22,11 @@ import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.http.content.default
+import io.ktor.server.http.content.staticFiles
 import io.ktor.server.response.respond
+import io.ktor.server.routing.routing
+import java.io.File
 import kotlinx.serialization.json.Json
 
 fun main() {
@@ -27,13 +35,31 @@ fun main() {
 
 fun Application.module() {
     val repository = VidrierAppRepository(DatabaseFactory.createDataSource())
-    val normalizer = CategoryNormalizer(repository)
-    val adminToken = System.getenv("ADMIN_API_TOKEN") ?: ""
     MaintenanceWorker(repository).start()
+    configureApp(
+        repository,
+        MockPaymentProcessor(),
+        GoogleGeocodingService(System.getenv("MAPS_API_KEY") ?: ""),
+        System.getenv("ADMIN_API_TOKEN") ?: "",
+        System.getenv("WEB_DIR") ?: "web",
+    )
+}
+
+fun Application.configureApp(
+    repository: VidrierAppRepository,
+    paymentProcessor: MockPaymentProcessor,
+    geocodingService: GoogleGeocodingService,
+    adminToken: String,
+    webDir: String? = null,
+) {
+    val normalizer = CategoryNormalizer(repository)
 
     install(CallLogging)
     install(CORS) {
         anyHost()
+        allowMethod(HttpMethod.Post)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
         allowHeader("X-Device-Id")
         allowHeader("X-Fingerprint-Hash")
         allowHeader("X-Browser-Token")
@@ -42,7 +68,10 @@ fun Application.module() {
     install(StatusPages) {
         exception<IllegalArgumentException> { call, cause -> call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message ?: "Invalid request")) }
         exception<NoSuchElementException> { call, cause -> call.respond(HttpStatusCode.NotFound, ErrorResponse(cause.message ?: "Resource not found")) }
+        exception<DuplicateVoteException> { call, cause -> call.respond(HttpStatusCode.Conflict, ErrorResponse(cause.message ?: "Duplicate vote")) }
+        exception<RateLimitExceededException> { call, cause -> call.respond(HttpStatusCode.TooManyRequests, ErrorResponse(cause.message ?: "Too many requests")) }
         exception<SecurityException> { call, cause -> call.respond(HttpStatusCode.Unauthorized, ErrorResponse(cause.message ?: "Unauthorized")) }
     }
-    configureRouting(repository, normalizer, MockPaymentProcessor(), GoogleGeocodingService(System.getenv("MAPS_API_KEY") ?: ""), adminToken)
+    configureRouting(repository, normalizer, paymentProcessor, geocodingService, adminToken)
+    webDir?.let { dir -> File(dir).takeIf { it.isDirectory }?.let { root -> routing { staticFiles("/", root) { default("index.html") } } } }
 }

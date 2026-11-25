@@ -71,6 +71,11 @@ services:
       JDBC_DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-vidrierapp}
       POSTGRES_USER: ${POSTGRES_USER:-vidrierapp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vidrierapp_secret}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-change-me-before-deploying}
+      MAPS_API_KEY: ${MAPS_API_KEY:-}
+      WEB_DIR: /app/web
+    volumes:
+      - ../web:/app/web:ro
     ports:
       - "${API_HOST_PORT:-8081}:8081"
     healthcheck:

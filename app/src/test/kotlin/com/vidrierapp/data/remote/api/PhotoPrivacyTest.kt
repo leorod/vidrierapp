@@ -1,6 +1,8 @@
 package com.vidrierapp.data.remote.api
 
+import com.vidrierapp.data.remote.dto.CheckoutRequestDto
 import com.vidrierapp.data.remote.dto.ShopDto
+import com.vidrierapp.data.remote.dto.TrialRequestDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import org.junit.Assert.assertFalse
@@ -30,8 +32,13 @@ class PhotoPrivacyTest {
             method.annotations.forEach { annotation ->
                 val name = annotation.annotationClass.simpleName
                 val forbidden = setOf("POST", "PUT", "PATCH", "Multipart")
-                val allowed = method.name == "reportRented" &&
-                    method.parameterTypes.all { it == String::class.java || it.name == "kotlin.coroutines.Continuation" }
+                val allowedParameters = setOf(
+                    String::class.java,
+                    TrialRequestDto::class.java,
+                    CheckoutRequestDto::class.java
+                )
+                val allowed = method.name in setOf("reportRented", "startTrial", "checkout") &&
+                    method.parameterTypes.all { it in allowedParameters || it.name == "kotlin.coroutines.Continuation" }
                 assertFalse("${method.name} is $name", name in forbidden && !allowed)
             }
         }

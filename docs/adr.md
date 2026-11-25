@@ -189,6 +189,15 @@
 
 ---
 
+### 2.25. Integración de la app, la web de voto y el backend
+
+- La web de voto envía `localId`, `otherText`, `clientToken` y `fingerprintHash` en el cuerpo. El backend acepta esos nombres además de `shopId`/`otherCategory` y los headers `X-Browser-Token`/`X-Fingerprint-Hash`, así no se toca el código de la web ya probado.
+- El backend responde `409` para voto duplicado y `429` para límite de pedidos, que son los códigos que la web ya interpreta.
+- La ficha del backend usa el contrato de la app: fechas en milisegundos, y mapas `frequencyCounts`, `votesByWeekday` y `votesByTimeSlot`. Los rubros se devuelven con su etiqueta en español y el estado `AVAILABLE` se informa como `listingStatus = ACTIVE`.
+- Franjas horarias: MORNING de 5 a 11 h, AFTERNOON de 12 a 19 h, NIGHT el resto.
+- La app elige mocks o backend con las propiedades Gradle `USE_MOCKS` (por defecto `true`) y `API_BASE_URL` (por defecto `http://10.0.2.2:8081/`). Con backend real envía `X-Device-Id` y avisa al servidor cuando se inicia la prueba o se compra el pase simulado.
+- El servidor sirve la carpeta `web/` y la consola interna en `/admin/` (alta de locales, estados, caducidad a 60 días y cartel con QR).
+
 ## 3. Decisiones de Backend y Procesamiento de Datos
 
 ### 3.1. Normalización Híbrida de Respuestas Libres ("Opción Otros")

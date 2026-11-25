@@ -41,6 +41,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import com.vidrierapp.BuildConfig
+import com.vidrierapp.data.remote.api.DeviceIdInterceptor
+import com.vidrierapp.data.remote.api.RemoteAccessSync
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -51,7 +55,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 class AppContainer(private val context: Context) {
 
     // Flag de debug activable para el motor de mocking local
-    private val isMockModeEnabled: Boolean = true
+    private val isMockModeEnabled: Boolean = BuildConfig.USE_MOCKS
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -85,6 +89,8 @@ class AppContainer(private val context: Context) {
             .apply {
                 if (isMockModeEnabled) {
                     addInterceptor(MockInterceptor(context, json) { onlineState.value })
+                } else {
+                    addInterceptor(DeviceIdInterceptor { runBlocking { passRepository.installationId() } })
                 }
             }
             .addInterceptor(HttpLoggingInterceptor().apply {
@@ -95,7 +101,7 @@ class AppContainer(private val context: Context) {
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("https://api.vidrierapp.example.com/")
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
@@ -135,6 +141,14 @@ class AppContainer(private val context: Context) {
 
     val clock: () -> Long = System::currentTimeMillis
 
+    private val remoteAccessSync: RemoteAccessSync by lazy {
+        RemoteAccessSync(apiService) { passRepository.installationId() }
+    }
+
+    private suspend fun syncRemote(block: suspend () -> Unit) {
+        if (!isMockModeEnabled) runCatching { block() }
+    }
+
     val passRepository: PassRepository by lazy {
         SharedPreferencesPassRepository(
             context.applicationContext.getSharedPreferences("pass_state", Context.MODE_PRIVATE)
@@ -146,11 +160,11 @@ class AppContainer(private val context: Context) {
     }
 
     val startTrialUseCase: StartTrialUseCase by lazy {
-        StartTrialUseCase(passRepository, clock)
+        StartTrialUseCase(passRepository, onStarted = { syncRemote { remoteAccessSync.startTrial() } }, clock = clock)
     }
 
     val purchasePassUseCase: PurchasePassUseCase by lazy {
-        PurchasePassUseCase(passRepository, clock)
+        PurchasePassUseCase(passRepository, onPurchased = { syncRemote { remoteAccessSync.checkout() } }, clock = clock)
     }
 
     val getShopsUseCase: GetShopsUseCase by lazy {
