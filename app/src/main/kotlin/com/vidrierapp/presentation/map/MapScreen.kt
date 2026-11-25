@@ -381,18 +381,25 @@ private fun ShopsMap(
             }
         }
         if (selectedShop == null) {
-            FloatingActionButton(
+            MyLocationButton(
                 onClick = onMyLocationClick,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .minTouchTarget()
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MyLocation,
-                    contentDescription = stringResource(R.string.map_btn_my_location_desc)
-                )
-            }
+                modifier = Modifier.align(Alignment.BottomEnd)
+            )
         }
+    }
+}
+
+@Composable
+internal fun MyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = modifier
+            .padding(16.dp)
+            .minTouchTarget()
+    ) {
+        Icon(
+            imageVector = Icons.Filled.MyLocation,
+            contentDescription = stringResource(R.string.map_btn_my_location_desc)
+        )
     }
 }

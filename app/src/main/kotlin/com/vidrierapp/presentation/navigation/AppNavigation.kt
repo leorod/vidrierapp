@@ -140,7 +140,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AppBottomBar(
+internal fun AppBottomBar(
     currentDestination: NavKey?,
     onTabSelected: (NavKey) -> Unit
 ) {
