@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VidrierApp · Consola interna</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header class="bar">
+  <h1>VidrierApp · Consola interna</h1>
+  <label class="token">Token admin <input id="token" type="password" autocomplete="off"></label>
+</header>
+<main>
+  <section class="card">
+    <h2>Alta de local</h2>
+    <form id="shop-form">
+      <label>Dirección <input name="address" required></label>
+      <label>Place ID de Google (opcional) <input name="placeId"></label>
+      <button type="button" id="resolve">Resolver ubicación</button>
+      <p id="resolve-out" class="hint"></p>
+      <div class="row">
+        <label>Latitud <input name="latitude" type="number" step="any" required></label>
+        <label>Longitud <input name="longitude" type="number" step="any" required></label>
+      </div>
+      <label class="check"><input type="checkbox" name="confirmFarLocation"> Confirmar ubicación a más de 150 m de la dirección resuelta</label>
+      <div class="row">
+        <label>Barrio <input name="neighborhood"></label>
+        <label>Superficie m² <input name="surfaceAreaM2" type="number" min="0"></label>
+        <label>Alquiler <input name="rentalPrice"></label>
+      </div>
+      <div class="row">
+        <label>Inmobiliaria <input name="agency"></label>
+        <label>Teléfono <input name="contactPhone"></label>
+        <label>Email <input name="contactEmail" type="email"></label>
+      </div>
+      <button type="submit">Crear local</button>
+      <p id="form-out" class="hint" role="status"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Locales disponibles</h2>
+    <div class="actions">
+      <button type="button" id="reload">Actualizar</button>
+      <button type="button" id="maintenance">Ejecutar caducidad a 60 días</button>
+    </div>
+    <p id="list-out" class="hint" role="status"></p>
+    <table>
+      <thead><tr><th>Dirección</th><th>Barrio</th><th>Votos</th><th>Acciones</th></tr></thead>
+      <tbody id="shops"></tbody>
+    </table>
+  </section>
+
+  <section class="card" id="poster-card" hidden>
+    <h2>Cartel con QR</h2>
+    <div id="poster" class="poster">
+      <h3>¿Qué querés que abra acá?</h3>
+      <div id="qr"></div>
+      <p>Escaneá y votá en 10 segundos</p>
+      <p class="small">Sin descargar nada · Es anónimo</p>
+      <p id="poster-url" class="small"></p>
+    </div>
+    <div class="actions">
+      <button type="button" id="print">Imprimir / PDF</button>
+    </div>
+  </section>
+</main>
+<script src="qrcode.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
