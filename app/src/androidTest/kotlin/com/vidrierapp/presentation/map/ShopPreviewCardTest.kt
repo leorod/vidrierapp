@@ -60,7 +60,7 @@ class ShopPreviewCardTest {
         composeTestRule.onNodeWithText("Av. Rivadavia 1000").assertIsDisplayed()
         composeTestRule.onNodeWithText("Haedo").assertIsDisplayed()
         composeTestRule
-            .onNodeWithText("${context.getString(R.string.map_card_top_rubro)} Cafetería")
+            .onNodeWithText(context.getString(R.string.map_card_top_rubro, "Cafetería"))
             .assertIsDisplayed()
         composeTestRule
             .onNodeWithText(context.getString(R.string.map_card_total_votes, 34))
@@ -75,7 +75,7 @@ class ShopPreviewCardTest {
             .onNodeWithText(context.getString(R.string.map_marker_collecting, 6, MIN_VOTES_FOR_METRICS))
             .assertIsDisplayed()
         composeTestRule
-            .onNodeWithText(context.getString(R.string.map_card_top_rubro), substring = true)
+            .onNodeWithText(context.getString(R.string.map_card_top_rubro, ""), substring = true)
             .assertDoesNotExist()
     }
 
