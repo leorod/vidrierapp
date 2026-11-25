@@ -7,12 +7,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -35,9 +35,12 @@ import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
 import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
+import com.vidrierapp.presentation.theme.DimmedContent
+import com.vidrierapp.presentation.theme.minTouchTarget
 import kotlin.math.roundToInt
 
 const val SHOP_PREVIEW_CARD_TAG = "shop_preview_card"
+const val PREVIEW_COLLECTING_TAG = "preview_collecting"
 private const val DISMISS_DRAG_THRESHOLD_DP = 72
 
 internal fun shouldDismissOnDrag(dragDistancePx: Float, thresholdPx: Float): Boolean =
@@ -106,14 +109,21 @@ fun ShopPreviewCard(
                         style = MaterialTheme.typography.bodyLarge
                     )
                 } else {
-                    Text(
-                        text = stringResource(
-                            R.string.map_marker_collecting,
-                            shop.totalVotes,
-                            MIN_VOTES_FOR_METRICS
-                        ),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    DimmedContent(modifier = Modifier.testTag(PREVIEW_COLLECTING_TAG)) {
+                        Icon(
+                            imageVector = Icons.Filled.HourglassTop,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.map_marker_collecting,
+                                shop.totalVotes,
+                                MIN_VOTES_FOR_METRICS
+                            ),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
                 Surface(
                     shape = MaterialTheme.shapes.small,
@@ -130,9 +140,9 @@ fun ShopPreviewCard(
                 Button(
                     onClick = onViewDetailClick,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
                         .padding(top = 12.dp)
+                        .fillMaxWidth()
+                        .minTouchTarget()
                 ) {
                     Text(text = stringResource(R.string.map_card_view_detail))
                 }

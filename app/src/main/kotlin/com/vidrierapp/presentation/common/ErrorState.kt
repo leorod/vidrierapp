@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -22,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
+import com.vidrierapp.presentation.theme.minTouchTarget
 
 @Composable
 fun ErrorState(
@@ -70,7 +70,7 @@ fun ErrorState(
             Button(
                 onClick = onRetry,
                 modifier = Modifier
-                    .heightIn(min = 48.dp)
+                    .minTouchTarget()
                     .semantics { contentDescription = retryDescription }
             ) {
                 Text(text = stringResource(R.string.action_retry))

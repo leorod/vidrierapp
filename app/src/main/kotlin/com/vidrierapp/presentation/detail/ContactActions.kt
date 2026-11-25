@@ -7,7 +7,6 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -19,8 +18,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
 import com.vidrierapp.domain.model.Shop
+import com.vidrierapp.presentation.theme.minTouchTarget
 
-private val CONTACT_BUTTON_MIN_SIZE = 48.dp
 
 internal fun launchContactIntent(context: Context, data: ContactIntentData?): Boolean {
     if (data == null) return false
@@ -82,7 +81,7 @@ private fun ContactButton(label: String, description: String, onClick: () -> Uni
     OutlinedButton(
         onClick = onClick,
         modifier = Modifier
-            .heightIn(min = CONTACT_BUTTON_MIN_SIZE)
+            .minTouchTarget()
             .semantics { contentDescription = description }
     ) {
         Text(text = label)

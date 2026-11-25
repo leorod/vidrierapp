@@ -2,7 +2,6 @@ package com.vidrierapp.presentation.map
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -22,6 +21,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
 import com.vidrierapp.domain.model.Category
+import com.vidrierapp.presentation.theme.minTouchTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +79,7 @@ private fun CategoryChip(
             selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
         ),
         modifier = Modifier
-            .heightIn(min = 48.dp)
+            .minTouchTarget()
             .semantics { if (selected) stateDescription = activeDescription }
     )
 }

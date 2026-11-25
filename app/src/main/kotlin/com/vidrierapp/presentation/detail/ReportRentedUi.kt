@@ -1,6 +1,5 @@
 package com.vidrierapp.presentation.detail
 
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -17,9 +16,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
+import com.vidrierapp.presentation.theme.minTouchTarget
 import kotlinx.coroutines.flow.Flow
 
-private val MIN_TOUCH_TARGET = 48.dp
 
 @Composable
 fun ReportRentedButton(
@@ -36,7 +35,7 @@ fun ReportRentedButton(
         onClick = onClick,
         enabled = !alreadyReported && !isSubmitting,
         modifier = modifier
-            .heightIn(min = MIN_TOUCH_TARGET)
+            .minTouchTarget()
             .semantics { contentDescription = description }
     ) {
         Text(
@@ -60,7 +59,7 @@ fun ReportRentedDialog(
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                modifier = Modifier.heightIn(min = MIN_TOUCH_TARGET)
+                modifier = Modifier.minTouchTarget()
             ) {
                 Text(text = stringResource(R.string.report_rented_dialog_confirm))
             }
@@ -68,7 +67,7 @@ fun ReportRentedDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.heightIn(min = MIN_TOUCH_TARGET)
+                modifier = Modifier.minTouchTarget()
             ) {
                 Text(text = stringResource(R.string.action_cancel))
             }

@@ -14,11 +14,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,12 +32,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,17 +56,20 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.vidrierapp.R
-import com.vidrierapp.presentation.common.ErrorState
 import com.vidrierapp.domain.location.Neighborhood
 import com.vidrierapp.domain.model.Category
 import com.vidrierapp.domain.model.GeoPoint
 import com.vidrierapp.domain.model.MIN_VOTES_FOR_METRICS
 import com.vidrierapp.domain.model.Shop
 import com.vidrierapp.presentation.common.AppViewModelProvider
+import com.vidrierapp.presentation.common.ErrorState
+import com.vidrierapp.presentation.theme.DimmedContent
+import com.vidrierapp.presentation.theme.minTouchTarget
 import kotlinx.coroutines.launch
 
 private const val HUE_RANGE = 360
 private const val NEUTRAL_MARKER_HUE = 210f
+const val CACHED_MAP_TAG = "map_cached_data"
 private const val NEUTRAL_MARKER_ALPHA = 0.6f
 private const val SINGLE_SHOP_ZOOM = 14f
 private const val DEFAULT_ZOOM = 13f
@@ -127,6 +130,7 @@ fun MapScreen(
 
         is MapUiState.Success -> ShopsMap(
             shops = state.shops,
+            isFromCache = state.isFromCache,
             categories = state.categories,
             selectedCategoryId = state.selectedCategoryFilter,
             onCategorySelected = viewModel::selectCategory,
@@ -172,6 +176,7 @@ private fun CenteredMessage(
 @Composable
 private fun ShopsMap(
     shops: List<Shop>,
+    isFromCache: Boolean,
     categories: List<Category>,
     selectedCategoryId: String?,
     onCategorySelected: (String?) -> Unit,
@@ -316,6 +321,23 @@ private fun ShopsMap(
                 onCategorySelected = onCategorySelected,
                 modifier = Modifier.fillMaxWidth()
             )
+            if (isFromCache) {
+                DimmedContent(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .testTag(CACHED_MAP_TAG)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CloudDone,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.map_cached_data),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
             if (locationState.showFallback) {
                 LocationFallbackBanner(
                     isPermissionDenied = locationState.permission == LocationPermission.Denied,
@@ -349,7 +371,7 @@ private fun ShopsMap(
                                 onClick = { onCategorySelected(null) },
                                 modifier = Modifier
                                     .padding(top = 8.dp)
-                                    .heightIn(min = 48.dp)
+                                    .minTouchTarget()
                             ) {
                                 Text(text = stringResource(R.string.map_filter_reset))
                             }
@@ -364,7 +386,7 @@ private fun ShopsMap(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
-                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .minTouchTarget()
             ) {
                 Icon(
                     imageVector = Icons.Filled.MyLocation,

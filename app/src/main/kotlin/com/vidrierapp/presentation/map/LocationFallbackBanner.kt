@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -29,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
 import com.vidrierapp.domain.location.Neighborhood
+import com.vidrierapp.presentation.theme.minTouchTarget
 
 @Composable
 fun LocationFallbackBanner(
@@ -72,7 +71,7 @@ fun LocationFallbackBanner(
                 )
                 OutlinedButton(
                     onClick = onCancelPickClick,
-                    modifier = Modifier.heightIn(min = 48.dp)
+                    modifier = Modifier.minTouchTarget()
                 ) {
                     Text(text = stringResource(R.string.map_location_pick_cancel))
                 }
@@ -93,7 +92,7 @@ fun LocationFallbackBanner(
                         if (query.isNotEmpty()) {
                             IconButton(
                                 onClick = { onQueryChange("") },
-                                modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                modifier = Modifier.minTouchTarget()
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Clear,
@@ -110,7 +109,7 @@ fun LocationFallbackBanner(
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 48.dp)
+                            .minTouchTarget()
                             .clickable { onSuggestionClick(neighborhood) }
                             .padding(horizontal = 8.dp, vertical = 12.dp)
                     )
@@ -118,14 +117,14 @@ fun LocationFallbackBanner(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
                         onClick = onPickOnMapClick,
-                        modifier = Modifier.heightIn(min = 48.dp)
+                        modifier = Modifier.minTouchTarget()
                     ) {
                         Text(text = stringResource(R.string.map_location_pick_on_map))
                     }
                     if (isPermissionDenied) {
                         Button(
                             onClick = onGrantClick,
-                            modifier = Modifier.heightIn(min = 48.dp)
+                            modifier = Modifier.minTouchTarget()
                         ) {
                             Text(text = stringResource(R.string.map_location_grant))
                         }
