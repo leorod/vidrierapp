@@ -1,15 +1,15 @@
 package com.vidrierapp.server.service
 
+import com.vidrierapp.server.application.port.PaymentDecision
+import com.vidrierapp.server.application.port.PaymentGateway
 import java.util.UUID
 
-data class MockPaymentDecision(val approved: Boolean, val failureReason: String? = null)
-
-class MockPaymentProcessor {
-    fun charge(paymentToken: String): MockPaymentDecision = when (paymentToken) {
-        "mock_approve" -> MockPaymentDecision(approved = true)
-        "mock_decline" -> MockPaymentDecision(approved = false, failureReason = "Payment declined by mock provider")
+class MockPaymentProcessor : PaymentGateway {
+    override fun charge(paymentToken: String): PaymentDecision = when (paymentToken) {
+        "mock_approve" -> PaymentDecision(approved = true)
+        "mock_decline" -> PaymentDecision(approved = false, failureReason = "Payment declined by mock provider")
         else -> throw IllegalArgumentException("paymentToken must be mock_approve or mock_decline")
     }
 
-    fun providerReference(): String = "mock_${UUID.randomUUID()}"
+    override fun providerReference(): String = "mock_${UUID.randomUUID()}"
 }

@@ -1,6 +1,7 @@
 package com.vidrierapp.server.service
 
 import com.vidrierapp.server.model.GeoResolveResponse
+import com.vidrierapp.server.application.port.GeocodingGateway
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -17,11 +18,11 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class ResolvedLocation(val latitude: Double, val longitude: Double, val expiresAt: Instant)
 
-class GoogleGeocodingService(private val apiKey: String) {
+class GoogleGeocodingService(private val apiKey: String) : GeocodingGateway {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
     private val resolutions = ConcurrentHashMap<String, ResolvedLocation>()
 
-    fun resolve(placeId: String?, address: String? = null): GeoResolveResponse {
+    override fun resolve(placeId: String?, address: String?): GeoResolveResponse {
         require(apiKey.isNotBlank()) { "MAPS_API_KEY is not configured" }
         val request = HttpRequest.newBuilder(geocodeUri(placeId, address))
             .timeout(Duration.ofSeconds(10))
@@ -53,7 +54,7 @@ class GoogleGeocodingService(private val apiKey: String) {
 
     private fun encode(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
-    fun validate(resolutionId: String?, latitude: Double, longitude: Double, confirmFarLocation: Boolean): Boolean {
+    override fun validate(resolutionId: String?, latitude: Double, longitude: Double, confirmFarLocation: Boolean): Boolean {
         val resolved = resolutionId?.let(resolutions::remove) ?: return confirmFarLocation
         require(resolved.expiresAt.isAfter(Instant.now())) { "Location resolution expired; resolve the address again" }
         return confirmFarLocation || distanceMeters(resolved.latitude, resolved.longitude, latitude, longitude) <= 150

@@ -4,6 +4,7 @@ import com.vidrierapp.server.config.DatabaseFactory
 import com.vidrierapp.server.auth.AuthConfig
 import com.vidrierapp.server.auth.AuthService
 import com.vidrierapp.server.auth.UserRole
+import com.vidrierapp.server.application.VidrierAppUseCases
 import com.vidrierapp.server.model.ErrorResponse
 import com.vidrierapp.server.routes.configureRouting
 import com.vidrierapp.server.service.CategoryNormalizer
@@ -42,25 +43,26 @@ fun main() {
 fun Application.module() {
     val repository = VidrierAppRepository(DatabaseFactory.createDataSource())
     MaintenanceWorker(repository).start()
-    configureApp(
+    val useCases = VidrierAppUseCases(
         repository,
+        CategoryNormalizer(repository),
         MockPaymentProcessor(),
         GoogleGeocodingService(System.getenv("MAPS_API_KEY") ?: ""),
+    )
+    configureApp(
         AuthService(AuthConfig(
             jwtSecret = requiredEnvironment("JWT_SECRET"),
         ), repository),
+        useCases,
         System.getenv("WEB_DIR") ?: "web",
     )
 }
 
 fun Application.configureApp(
-    repository: VidrierAppRepository,
-    paymentProcessor: MockPaymentProcessor,
-    geocodingService: GoogleGeocodingService,
     authService: AuthService,
+    useCases: VidrierAppUseCases,
     webDir: String? = null,
 ) {
-    val normalizer = CategoryNormalizer(repository)
 
     install(CallLogging)
     install(CORS) {
@@ -94,7 +96,7 @@ fun Application.configureApp(
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Internal server error"))
         }
     }
-    configureRouting(repository, normalizer, paymentProcessor, geocodingService, authService)
+    configureRouting(useCases, authService)
     webDir?.let { dir -> File(dir).takeIf { it.isDirectory }?.let { root -> routing { staticFiles("/", root) { default("index.html") } } } }
 }
 
