@@ -1,6 +1,9 @@
 package com.vidrierapp.server
 
 import com.vidrierapp.server.config.DatabaseFactory
+import com.vidrierapp.server.auth.AuthConfig
+import com.vidrierapp.server.auth.AuthService
+import com.vidrierapp.server.auth.UserRole
 import com.vidrierapp.server.model.ErrorResponse
 import com.vidrierapp.server.routes.configureRouting
 import com.vidrierapp.server.service.CategoryNormalizer
@@ -16,6 +19,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.calllogging.CallLogging
@@ -40,7 +46,13 @@ fun Application.module() {
         repository,
         MockPaymentProcessor(),
         GoogleGeocodingService(System.getenv("MAPS_API_KEY") ?: ""),
-        System.getenv("ADMIN_API_TOKEN") ?: "",
+        AuthService(AuthConfig(
+            jwtSecret = requiredEnvironment("JWT_SECRET"),
+            adminUsername = requiredEnvironment("ADMIN_USERNAME"),
+            adminPassword = requiredEnvironment("ADMIN_PASSWORD"),
+            userUsername = requiredEnvironment("USER_USERNAME"),
+            userPassword = requiredEnvironment("USER_PASSWORD"),
+        )),
         System.getenv("WEB_DIR") ?: "web",
     )
 }
@@ -49,7 +61,7 @@ fun Application.configureApp(
     repository: VidrierAppRepository,
     paymentProcessor: MockPaymentProcessor,
     geocodingService: GoogleGeocodingService,
-    adminToken: String,
+    authService: AuthService,
     webDir: String? = null,
 ) {
     val normalizer = CategoryNormalizer(repository)
@@ -64,6 +76,16 @@ fun Application.configureApp(
         allowHeader("X-Fingerprint-Hash")
         allowHeader("X-Browser-Token")
     }
+    install(Authentication) {
+        jwt("auth-jwt") {
+            realm = "VidrierApp"
+            verifier(authService.verifier)
+            validate { credential ->
+                val role = credential.payload.getClaim("role").asString()
+                if (credential.payload.subject.isNullOrBlank() || role !in UserRole.entries.map { it.name }) null else JWTPrincipal(credential.payload)
+            }
+        }
+    }
     install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; explicitNulls = false }) }
     install(StatusPages) {
         exception<IllegalArgumentException> { call, cause -> call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message ?: "Invalid request")) }
@@ -76,6 +98,9 @@ fun Application.configureApp(
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Internal server error"))
         }
     }
-    configureRouting(repository, normalizer, paymentProcessor, geocodingService, adminToken)
+    configureRouting(repository, normalizer, paymentProcessor, geocodingService, authService)
     webDir?.let { dir -> File(dir).takeIf { it.isDirectory }?.let { root -> routing { staticFiles("/", root) { default("index.html") } } } }
 }
+
+private fun requiredEnvironment(name: String): String =
+    System.getenv(name)?.takeIf { it.isNotBlank() } ?: error("$name must be configured")

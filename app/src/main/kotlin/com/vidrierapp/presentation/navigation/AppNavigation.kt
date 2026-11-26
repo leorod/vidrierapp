@@ -36,6 +36,8 @@ import com.vidrierapp.presentation.detail.ShopDetailScreen
 import com.vidrierapp.presentation.map.MapScreen
 import com.vidrierapp.presentation.visit.LogVisitScreen
 import com.vidrierapp.presentation.visit.MyVisitsHubScreen
+import com.vidrierapp.presentation.auth.AuthViewModel
+import com.vidrierapp.presentation.auth.LoginScreen
 
 private data class TopLevelTab(
     val destination: NavKey,
@@ -50,6 +52,13 @@ private val topLevelTabs = listOf(
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
+    val authViewModel: AuthViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val session by authViewModel.session.collectAsState()
+    val loginState by authViewModel.loginState.collectAsState()
+    if (session == null) {
+        LoginScreen(loginState = loginState, onLogin = authViewModel::login)
+        return
+    }
     val backStack = rememberNavBackStack(MapDestination as NavKey)
     val currentDestination = backStack.lastOrNull()
     val networkStatusViewModel: NetworkStatusViewModel = viewModel(factory = AppViewModelProvider.Factory)

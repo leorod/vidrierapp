@@ -11,6 +11,7 @@ import com.vidrierapp.presentation.detail.ShopDetailViewModel
 import com.vidrierapp.presentation.map.MapViewModel
 import com.vidrierapp.presentation.visit.MyVisitsHubViewModel
 import com.vidrierapp.presentation.visit.VisitViewModel
+import com.vidrierapp.presentation.auth.AuthViewModel
 
 object AppViewModelProvider {
     val Factory = viewModelFactory {
@@ -34,6 +35,7 @@ object AppViewModelProvider {
         }
         initializer { NetworkStatusViewModel(container().networkMonitor) }
         initializer { MyVisitsHubViewModel(container().getAllVisitsUseCase, container().getCachedShopsUseCase, container().clock) }
+        initializer { AuthViewModel(container().sessionRepository) }
     }
 }
 

@@ -4,6 +4,8 @@ import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
 import com.vidrierapp.data.remote.dto.ShopDto
 import com.vidrierapp.data.remote.dto.CheckoutRequestDto
 import com.vidrierapp.data.remote.dto.TrialRequestDto
+import com.vidrierapp.data.remote.dto.AuthResponseDto
+import com.vidrierapp.data.remote.dto.LoginRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -11,6 +13,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface VidrierAppApiService {
+    @POST("api/v1/auth/login")
+    suspend fun login(@Body request: LoginRequestDto): AuthResponseDto
+
     @GET("api/v1/shops")
     suspend fun getShops(
         @Query("category") category: String? = null

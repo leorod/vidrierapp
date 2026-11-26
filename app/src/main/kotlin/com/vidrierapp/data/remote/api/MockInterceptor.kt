@@ -3,6 +3,7 @@ package com.vidrierapp.data.remote.api
 import android.content.Context
 import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
 import com.vidrierapp.data.remote.dto.ShopDto
+import com.vidrierapp.data.remote.dto.AuthResponseDto
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.json.Json
@@ -40,6 +41,10 @@ class MockInterceptor(
         if (!isOnline()) throw IOException("Sin conexión")
         val url = request.url
         val pathSegments = url.encodedPathSegments
+
+        if (request.method == "POST" && pathSegments.takeLast(2) == listOf("auth", "login")) {
+            return respond(request, 200, "OK", json.encodeToString(AuthResponseDto("mock-jwt", "demo", "USER", "2099-01-01T00:00:00Z")))
+        }
 
         val shops = try {
             json.decodeFromString<List<ShopDto>>(readShopsJson())

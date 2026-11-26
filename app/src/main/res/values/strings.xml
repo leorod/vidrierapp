@@ -1,6 +1,12 @@
 <resources>
     <string name="app_name">VidrierApp</string>
     <string name="app_tagline">Abrí donde te esperan</string>
+    <string name="login_title">Ingresá a VidrierApp</string>
+    <string name="login_description">Usá tu cuenta para explorar oportunidades comerciales.</string>
+    <string name="login_username">Usuario</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_submit">Iniciar sesión</string>
+    <string name="login_loading">Iniciando sesión</string>
 
     <!-- Navegación & Comunes -->
     <string name="nav_map">Mapa</string>

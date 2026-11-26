@@ -1,6 +1,8 @@
 package com.vidrierapp.server.routes
 
 import com.vidrierapp.server.configureApp
+import com.vidrierapp.server.auth.AuthConfig
+import com.vidrierapp.server.auth.AuthService
 import com.vidrierapp.server.model.ReportRentedResponse
 import com.vidrierapp.server.model.ShopDetailResponse
 import com.vidrierapp.server.model.ShopSummaryResponse
@@ -34,7 +36,10 @@ import kotlin.test.assertTrue
 private val SHOP_ID = UUID.fromString("11111111-1111-1111-1111-111111111111")
 private const val FINGERPRINT = "0123456789abcdef0123456789abcdef"
 private const val TOKEN = "browser-token-0123456789"
-private const val ADMIN_TOKEN = "secret-admin"
+private const val ADMIN_USERNAME = "admin"
+private const val ADMIN_PASSWORD = "secret-admin"
+private const val USER_USERNAME = "user"
+private const val USER_PASSWORD = "secret-user"
 
 private val unusedDataSource: DataSource = Proxy.newProxyInstance(
     DataSource::class.java.classLoader,
@@ -89,9 +94,11 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
 }
 
 private fun apiTest(repository: FakeRepository = FakeRepository(), block: suspend ApplicationTestBuilder.(FakeRepository) -> Unit) = testApplication {
-    application { configureApp(repository, MockPaymentProcessor(), GoogleGeocodingService(""), ADMIN_TOKEN, null) }
+    application { configureApp(repository, MockPaymentProcessor(), GoogleGeocodingService(""), testAuthService(), null) }
     block(repository)
 }
+
+private fun testAuthService() = AuthService(AuthConfig("test-secret", ADMIN_USERNAME, ADMIN_PASSWORD, USER_USERNAME, USER_PASSWORD))
 
 private suspend fun ApplicationTestBuilder.postJson(path: String, body: String, headers: Map<String, String> = emptyMap()) =
     client.post(path) {
@@ -100,7 +107,25 @@ private suspend fun ApplicationTestBuilder.postJson(path: String, body: String, 
         setBody(body)
     }
 
+private suspend fun ApplicationTestBuilder.login(username: String, password: String): String {
+    val response = postJson("/api/v1/auth/login", """{"username":"$username","password":"$password"}""")
+    return Regex(""""token":"([^"]+)""").find(response.bodyAsText())?.groupValues?.get(1) ?: error("Login did not return a token")
+}
+
 class ApiRoutesTest {
+
+    @Test
+    fun `login returns a user jwt for valid credentials`() = apiTest {
+        val response = postJson("/api/v1/auth/login", """{"username":"$USER_USERNAME","password":"$USER_PASSWORD"}""")
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("\"role\":\"USER\""))
+    }
+
+    @Test
+    fun `user jwt cannot access admin endpoints`() = apiTest {
+        val response = postJson("/api/v1/admin/maintenance/run", "{}", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}"))
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
 
     @Test
     fun `vote accepts web payload with identifiers in the body`() = apiTest { repository ->
@@ -147,57 +172,57 @@ class ApiRoutesTest {
 
     @Test
     fun `shop list returns available shops`() = apiTest {
-        val response = client.get("/api/v1/shops")
+        val response = client.get("/api/v1/shops") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("Mataderos"))
     }
 
     @Test
     fun `detail hides metrics without an active pass`() = apiTest {
-        val body = client.get("/api/v1/shops/$SHOP_ID").bodyAsText()
+        val body = client.get("/api/v1/shops/$SHOP_ID") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
         assertTrue(body.contains("\"metricsAvailable\":false"))
     }
 
     @Test
     fun `detail exposes metrics with an active pass and enough votes`() = apiTest(FakeRepository().apply { activeDevices = setOf("device-1") }) {
-        val body = client.get("/api/v1/shops/$SHOP_ID") { header("X-Device-Id", "device-1") }.bodyAsText()
+        val body = client.get("/api/v1/shops/$SHOP_ID") { header("X-Device-Id", "device-1"); header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
         assertTrue(body.contains("\"metricsAvailable\":true"))
         assertTrue(body.contains("\"DIARIA\":4"))
     }
 
     @Test
     fun `detail hides metrics below the sample threshold even with a pass`() = apiTest(FakeRepository().apply { activeDevices = setOf("device-1"); sampleSufficient = false }) {
-        val body = client.get("/api/v1/shops/$SHOP_ID") { header("X-Device-Id", "device-1") }.bodyAsText()
+        val body = client.get("/api/v1/shops/$SHOP_ID") { header("X-Device-Id", "device-1"); header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
         assertTrue(body.contains("\"metricsAvailable\":false"))
     }
 
     @Test
     fun `unknown shop answers not found`() = apiTest {
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/v1/shops/${UUID.randomUUID()}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/v1/shops/${UUID.randomUUID()}") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.status)
     }
 
     @Test
     fun `malformed shop id answers bad request`() = apiTest {
-        assertEquals(HttpStatusCode.BadRequest, client.get("/api/v1/shops/not-a-uuid").status)
+        assertEquals(HttpStatusCode.BadRequest, client.get("/api/v1/shops/not-a-uuid") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.status)
     }
 
     @Test
     fun `report rented answers the shape the app expects`() = apiTest {
-        val response = postJson("/api/v1/shops/$SHOP_ID/report-rented", "{}")
+        val response = postJson("/api/v1/shops/$SHOP_ID/report-rented", "{}", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}"))
         assertEquals(HttpStatusCode.Accepted, response.status)
         assertTrue(response.bodyAsText().contains("\"reportCount\":1"))
     }
 
     @Test
     fun `trial endpoint starts a trial for the device`() = apiTest {
-        val response = postJson("/api/v1/auth/trial", """{"deviceId":"device-1"}""")
+        val response = postJson("/api/v1/auth/trial", """{"deviceId":"device-1"}""", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}"))
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("\"metricsAvailable\":true"))
     }
 
     @Test
     fun `trial endpoint requires a device id`() = apiTest {
-        assertEquals(HttpStatusCode.BadRequest, postJson("/api/v1/auth/trial", """{"deviceId":""}""").status)
+        assertEquals(HttpStatusCode.BadRequest, postJson("/api/v1/auth/trial", """{"deviceId":""}""", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}")).status)
     }
 
     @Test
@@ -207,15 +232,15 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun `admin can change shop status with the token`() = apiTest { repository ->
-        val response = postJson("/api/v1/admin/shops/$SHOP_ID/status", """{"status":"RENTED"}""", mapOf(HttpHeaders.Authorization to "Bearer $ADMIN_TOKEN"))
+    fun `admin can change shop status with an admin jwt`() = apiTest { repository ->
+        val response = postJson("/api/v1/admin/shops/$SHOP_ID/status", """{"status":"RENTED"}""", mapOf(HttpHeaders.Authorization to "Bearer ${login(ADMIN_USERNAME, ADMIN_PASSWORD)}"))
         assertEquals(HttpStatusCode.NoContent, response.status)
         assertEquals(listOf(SHOP_ID to "RENTED"), repository.statusUpdates)
     }
 
     @Test
     fun `admin maintenance run answers a serializable summary`() = apiTest {
-        val response = postJson("/api/v1/admin/maintenance/run", "{}", mapOf(HttpHeaders.Authorization to "Bearer $ADMIN_TOKEN"))
+        val response = postJson("/api/v1/admin/maintenance/run", "{}", mapOf(HttpHeaders.Authorization to "Bearer ${login(ADMIN_USERNAME, ADMIN_PASSWORD)}"))
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("\"expiredShops\":2"))
     }
