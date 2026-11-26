@@ -97,29 +97,30 @@ open class VidrierAppRepository(private val dataSource: DataSource) : PlatformRe
         }
     }
 
-    override fun startTrial(deviceId: String): TrialResponse = dataSource.connection.use { connection ->
-        connection.prepareStatement("INSERT INTO device_trials (device_id, trial_expires_at) VALUES (?, NOW() + INTERVAL '3 days') ON CONFLICT (device_id) DO NOTHING").use { it.setString(1, deviceId); it.executeUpdate() }
-        connection.prepareStatement("SELECT status::text, COALESCE(pass_expires_at, trial_expires_at) expires_at FROM device_trials WHERE device_id = ?").use { statement -> statement.setString(1, deviceId); statement.executeQuery().use { results -> results.next(); trialResponse(deviceId, results.getString(1), results.getObject(2, java.time.OffsetDateTime::class.java).toInstant()) } }
+    override fun startTrial(username: String): TrialResponse = dataSource.connection.use { connection ->
+        val userId = userId(connection, username)
+        connection.prepareStatement("INSERT INTO subscriptions (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING").use { it.setObject(1, userId); it.executeUpdate() }
+        subscriptionResponse(connection, userId, username)
     }
 
-    override fun checkoutPass(deviceId: String, processor: PaymentGateway, paymentToken: String): MockCheckoutResponse = dataSource.connection.use { connection ->
+    override fun checkoutPass(username: String, processor: PaymentGateway, paymentToken: String): MockCheckoutResponse = dataSource.connection.use { connection ->
+        val userId = userId(connection, username)
         val decision = processor.charge(paymentToken)
         val paymentId = UUID.randomUUID()
         val reference = processor.providerReference()
         connection.autoCommit = false
         try {
-            connection.prepareStatement("INSERT INTO mock_payments (id, device_id, provider_reference, amount_cents, status, failure_reason) VALUES (?, ?, ?, 500000, ?, ?)").use { statement ->
-                statement.setObject(1, paymentId); statement.setString(2, deviceId); statement.setString(3, reference); statement.setString(4, if (decision.approved) "APPROVED" else "DECLINED"); statement.setString(5, decision.failureReason); statement.executeUpdate()
+            connection.prepareStatement("INSERT INTO mock_payments (id, user_id, provider_reference, amount_cents, status, failure_reason) VALUES (?, ?, ?, 500000, ?, ?)").use { statement ->
+                statement.setObject(1, paymentId); statement.setObject(2, userId); statement.setString(3, reference); statement.setString(4, if (decision.approved) "APPROVED" else "DECLINED"); statement.setString(5, decision.failureReason); statement.executeUpdate()
             }
-            val pass = if (decision.approved) activatePass(connection, deviceId) else null
+            val pass = if (decision.approved) activatePass(connection, userId, username) else null
             connection.commit()
             MockCheckoutResponse(paymentId.toString(), reference, if (decision.approved) "APPROVED" else "DECLINED", decision.failureReason, pass)
         } catch (error: Exception) { connection.rollback(); throw error } finally { connection.autoCommit = true }
     }
 
-    override fun hasActiveAccess(deviceId: String?): Boolean {
-        if (deviceId.isNullOrBlank()) return false
-        return dataSource.connection.use { connection -> connection.prepareStatement("SELECT EXISTS (SELECT 1 FROM device_trials WHERE device_id = ? AND COALESCE(pass_expires_at, trial_expires_at) > NOW())").use { statement -> statement.setString(1, deviceId); statement.executeQuery().use { it.next(); it.getBoolean(1) } } }
+    override fun hasActiveAccess(username: String): Boolean = dataSource.connection.use { connection ->
+        connection.prepareStatement("SELECT EXISTS (SELECT 1 FROM subscriptions s JOIN app_users u ON u.id = s.user_id WHERE u.username = ? AND COALESCE(s.pass_expires_at, s.trial_expires_at) > NOW())").use { statement -> statement.setString(1, username); statement.executeQuery().use { it.next(); it.getBoolean(1) } }
     }
 
     override fun createShop(request: CreateShopRequest): ShopSummaryResponse = dataSource.connection.use { connection ->
@@ -161,7 +162,7 @@ open class VidrierAppRepository(private val dataSource: DataSource) : PlatformRe
     }
 
     override fun expireAccessStatuses(): Int = dataSource.connection.use { connection ->
-        connection.prepareStatement("UPDATE device_trials SET status = CASE WHEN pass_expires_at IS NOT NULL AND pass_expires_at <= NOW() THEN 'PASS_EXPIRED'::trial_status WHEN pass_expires_at IS NULL AND trial_expires_at <= NOW() THEN 'TRIAL_EXPIRED'::trial_status ELSE status END WHERE (pass_expires_at IS NOT NULL AND pass_expires_at <= NOW() AND status <> 'PASS_EXPIRED') OR (pass_expires_at IS NULL AND trial_expires_at <= NOW() AND status <> 'TRIAL_EXPIRED')").use { it.executeUpdate() }
+        connection.prepareStatement("UPDATE subscriptions SET status = CASE WHEN pass_expires_at IS NOT NULL AND pass_expires_at <= NOW() THEN 'PASS_EXPIRED'::trial_status WHEN pass_expires_at IS NULL AND trial_expires_at <= NOW() THEN 'TRIAL_EXPIRED'::trial_status ELSE status END WHERE (pass_expires_at IS NOT NULL AND pass_expires_at <= NOW() AND status <> 'PASS_EXPIRED') OR (pass_expires_at IS NULL AND trial_expires_at <= NOW() AND status <> 'TRIAL_EXPIRED')").use { it.executeUpdate() }
     }
 
     override fun refreshAggregates() = dataSource.connection.use { connection -> connection.createStatement().use { statement -> statement.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_shop_vote_summary"); statement.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_shop_hourly_distribution") } }
@@ -179,10 +180,12 @@ open class VidrierAppRepository(private val dataSource: DataSource) : PlatformRe
     private fun listingStatusOf(status: String) = if (status == "AVAILABLE") "ACTIVE" else status
     private fun jsonString(json: String, key: String) = "\"$key\"\\s*:\\s*\"([^\"]*)\"".toRegex().find(json)?.groupValues?.get(1) ?: ""
     private fun jsonInt(json: String, key: String) = "\"$key\"\\s*:\\s*(\\d+)".toRegex().find(json)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-    private fun trialResponse(deviceId: String, status: String, expiresAt: Instant) = TrialResponse(deviceId, status, expiresAt.toString(), expiresAt.isAfter(Instant.now()))
-    private fun activatePass(connection: java.sql.Connection, deviceId: String): TrialResponse {
-        connection.prepareStatement("INSERT INTO device_trials (device_id, trial_expires_at, status, pass_activated_at, pass_expires_at) VALUES (?, NOW(), 'PASS_ACTIVE', NOW(), NOW() + INTERVAL '30 days') ON CONFLICT (device_id) DO UPDATE SET status = 'PASS_ACTIVE', pass_activated_at = NOW(), pass_expires_at = NOW() + INTERVAL '30 days'").use { statement -> statement.setString(1, deviceId); statement.executeUpdate() }
-        return connection.prepareStatement("SELECT status::text, pass_expires_at FROM device_trials WHERE device_id = ?").use { statement -> statement.setString(1, deviceId); statement.executeQuery().use { results -> results.next(); trialResponse(deviceId, results.getString(1), results.getObject(2, java.time.OffsetDateTime::class.java).toInstant()) } }
+    private fun trialResponse(username: String, status: String, expiresAt: Instant) = TrialResponse(username, status, expiresAt.toString(), expiresAt.isAfter(Instant.now()))
+    private fun userId(connection: java.sql.Connection, username: String): UUID = connection.prepareStatement("SELECT id FROM app_users WHERE username = ?").use { statement -> statement.setString(1, username); statement.executeQuery().use { results -> if (results.next()) results.getObject(1, UUID::class.java) else throw SecurityException("Authenticated user no longer exists") } }
+    private fun subscriptionResponse(connection: java.sql.Connection, userId: UUID, username: String): TrialResponse = connection.prepareStatement("SELECT status::text, COALESCE(pass_expires_at, trial_expires_at) FROM subscriptions WHERE user_id = ?").use { statement -> statement.setObject(1, userId); statement.executeQuery().use { results -> results.next(); trialResponse(username, results.getString(1), results.getObject(2, java.time.OffsetDateTime::class.java).toInstant()) } }
+    private fun activatePass(connection: java.sql.Connection, userId: UUID, username: String): TrialResponse {
+        connection.prepareStatement("INSERT INTO subscriptions (user_id, status, trial_expires_at, pass_activated_at, pass_expires_at) VALUES (?, 'PASS_ACTIVE', NOW(), NOW(), NOW() + INTERVAL '30 days') ON CONFLICT (user_id) DO UPDATE SET status = 'PASS_ACTIVE', pass_activated_at = NOW(), pass_expires_at = NOW() + INTERVAL '30 days'").use { statement -> statement.setObject(1, userId); statement.executeUpdate() }
+        return subscriptionResponse(connection, userId, username)
     }
     private fun enforceIpRateLimit(connection: java.sql.Connection, ipAddress: String) {
         val ipHash = sha256(ipAddress)

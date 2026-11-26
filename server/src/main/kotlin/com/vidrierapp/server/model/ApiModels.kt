@@ -88,13 +88,13 @@ data class MaintenanceRunResponse(val expiredShops: Int, val expiredAccess: Int,
 data class VoteResponse(val id: String, val category: String, val classified: Boolean)
 
 @Serializable
-data class TrialRequest(val deviceId: String)
+data object TrialRequest
 
 @Serializable
-data class TrialResponse(val deviceId: String, val status: String, val expiresAt: String, val metricsAvailable: Boolean)
+data class TrialResponse(val username: String, val status: String, val expiresAt: String, val metricsAvailable: Boolean)
 
 @Serializable
-data class MockCheckoutRequest(val deviceId: String, val paymentToken: String)
+data class MockCheckoutRequest(val paymentToken: String)
 
 @Serializable
 data class MockCheckoutResponse(

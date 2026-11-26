@@ -43,7 +43,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import com.vidrierapp.BuildConfig
-import com.vidrierapp.data.remote.api.DeviceIdInterceptor
 import com.vidrierapp.data.remote.api.AuthInterceptor
 import com.vidrierapp.data.remote.api.RemoteAccessSync
 import com.vidrierapp.data.repository.SessionRepository
@@ -91,8 +90,6 @@ class AppContainer(private val context: Context) {
             .apply {
                 if (isMockModeEnabled) {
                     addInterceptor(MockInterceptor(context, json) { onlineState.value })
-                } else {
-                    addInterceptor(DeviceIdInterceptor { runBlocking { passRepository.installationId() } })
                 }
             }
             .addInterceptor(AuthInterceptor { sessionRepository.token() })
@@ -152,7 +149,7 @@ class AppContainer(private val context: Context) {
     val clock: () -> Long = System::currentTimeMillis
 
     private val remoteAccessSync: RemoteAccessSync by lazy {
-        RemoteAccessSync(apiService) { passRepository.installationId() }
+        RemoteAccessSync(apiService)
     }
 
     private suspend fun syncRemote(block: suspend () -> Unit) {

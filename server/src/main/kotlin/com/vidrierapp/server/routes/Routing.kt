@@ -58,7 +58,7 @@ fun Application.configureRouting(useCases: VidrierAppUseCases, authService: Auth
 
             get("/shops/{id}") {
                 val id = call.uuidParameter("id")
-                call.respond(useCases.shopDetail(id, call.request.headers["X-Device-Id"]))
+                call.respond(useCases.shopDetail(id, call.authenticatedUsername()))
             }
 
             post("/shops/{id}/report-rented") {
@@ -66,15 +66,12 @@ fun Application.configureRouting(useCases: VidrierAppUseCases, authService: Auth
             }
 
             post("/auth/trial") {
-                val request = call.receive<TrialRequest>()
-                require(request.deviceId.isNotBlank()) { "deviceId is required" }
-                call.respond(useCases.startTrial(request.deviceId))
+                call.respond(useCases.startTrial(call.authenticatedUsername()))
             }
 
             post("/payments/checkout") {
                 val request = call.receive<MockCheckoutRequest>()
-                require(request.deviceId.isNotBlank()) { "deviceId is required" }
-                call.respond(useCases.checkoutPass(request.deviceId, request.paymentToken))
+                call.respond(useCases.checkoutPass(call.authenticatedUsername(), request.paymentToken))
             }
 
             get("/zones/summary") { call.respond(useCases.zoneSummaries()) }
@@ -126,6 +123,9 @@ private fun io.ktor.server.application.ApplicationCall.requireAdmin() {
         throw SecurityException("Admin authentication required")
     }
 }
+
+private fun io.ktor.server.application.ApplicationCall.authenticatedUsername(): String =
+    principal<JWTPrincipal>()?.payload?.subject ?: throw SecurityException("Authentication required")
 
 private fun io.ktor.server.application.ApplicationCall.clientIp(): String =
     request.headers["X-Forwarded-For"]?.substringBefore(',')?.trim() ?: request.local.remoteHost

@@ -3,7 +3,7 @@ package com.vidrierapp.data.remote.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TrialRequestDto(val deviceId: String)
+data object TrialRequestDto
 
 @Serializable
-data class CheckoutRequestDto(val deviceId: String, val paymentToken: String)
+data class CheckoutRequestDto(val paymentToken: String)
