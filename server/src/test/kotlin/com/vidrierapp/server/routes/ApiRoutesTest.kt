@@ -55,7 +55,7 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
     var lastCategory: NormalizedCategory? = null
     var lastBrowserToken: String? = null
     var statusUpdates = mutableListOf<Pair<UUID, String>>()
-    var activeDevices = setOf<String>()
+    var activeUsers = setOf<String>()
     var sampleSufficient = true
     val users = mapOf(
         ADMIN_USERNAME to AuthUser(ADMIN_USERNAME, "210000:MDEyMzQ1Njc4OWFiY2RlZg==:ot+As7/w2nV4YKMwo4zogAUyHZIe0jttdo+puhn8TXQ=", UserRole.ADMIN),
@@ -76,7 +76,7 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
         return if (metricsAllowed && sampleSufficient) base.copy(metricsAvailable = true, frequencyCounts = mapOf("DIARIA" to 4)) else base
     }
 
-    override fun hasActiveAccess(deviceId: String?) = deviceId != null && deviceId in activeDevices
+    override fun hasActiveAccess(username: String) = username in activeUsers
 
     override fun submitVote(shopId: UUID, category: NormalizedCategory, frequency: String?, fingerprint: String, browserToken: String, ipAddress: String): UUID {
         if (duplicate) throw DuplicateVoteException()
@@ -91,7 +91,7 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
         return ReportRentedResponse(id.toString(), 1, "ACTIVE")
     }
 
-    override fun startTrial(deviceId: String) = TrialResponse(deviceId, "TRIAL_ACTIVE", Instant.parse("2026-11-28T00:00:00Z").toString(), true)
+    override fun startTrial(username: String) = TrialResponse(username, "TRIAL_ACTIVE", Instant.parse("2026-11-28T00:00:00Z").toString(), true)
 
     override fun updateShopStatus(id: UUID, status: String) { statusUpdates += id to status }
 
@@ -199,15 +199,15 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun `detail exposes metrics with an active pass and enough votes`() = apiTest(FakeRepository().apply { activeDevices = setOf("device-1") }) {
-        val body = client.get("/api/v1/shops/$SHOP_ID") { header("X-Device-Id", "device-1"); header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
+    fun `detail exposes metrics with an active subscription and enough votes`() = apiTest(FakeRepository().apply { activeUsers = setOf(USER_USERNAME) }) {
+        val body = client.get("/api/v1/shops/$SHOP_ID") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
         assertTrue(body.contains("\"metricsAvailable\":true"))
         assertTrue(body.contains("\"DIARIA\":4"))
     }
 
     @Test
-    fun `detail hides metrics below the sample threshold even with a pass`() = apiTest(FakeRepository().apply { activeDevices = setOf("device-1"); sampleSufficient = false }) {
-        val body = client.get("/api/v1/shops/$SHOP_ID") { header("X-Device-Id", "device-1"); header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
+    fun `detail hides metrics below the sample threshold even with a subscription`() = apiTest(FakeRepository().apply { activeUsers = setOf(USER_USERNAME); sampleSufficient = false }) {
+        val body = client.get("/api/v1/shops/$SHOP_ID") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
         assertTrue(body.contains("\"metricsAvailable\":false"))
     }
 
@@ -229,15 +229,10 @@ class ApiRoutesTest {
     }
 
     @Test
-    fun `trial endpoint starts a trial for the device`() = apiTest {
-        val response = postJson("/api/v1/auth/trial", """{"deviceId":"device-1"}""", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}"))
+    fun `trial endpoint starts a trial for the authenticated account`() = apiTest {
+        val response = postJson("/api/v1/auth/trial", "{}", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}"))
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains("\"metricsAvailable\":true"))
-    }
-
-    @Test
-    fun `trial endpoint requires a device id`() = apiTest {
-        assertEquals(HttpStatusCode.BadRequest, postJson("/api/v1/auth/trial", """{"deviceId":""}""", mapOf(HttpHeaders.Authorization to "Bearer ${login(USER_USERNAME, USER_PASSWORD)}")).status)
     }
 
     @Test

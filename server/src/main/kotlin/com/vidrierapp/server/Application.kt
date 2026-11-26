@@ -70,7 +70,6 @@ fun Application.configureApp(
         allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
-        allowHeader("X-Device-Id")
         allowHeader("X-Fingerprint-Hash")
         allowHeader("X-Browser-Token")
     }

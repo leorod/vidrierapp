@@ -48,7 +48,7 @@ server/
 │   └── migrations/
 │       ├── V1__create_shops.sql          # Tabla shops + índices espaciales
 │       ├── V2__create_votes.sql          # Tabla votes + anti-duplicados
-│       ├── V3__create_device_trials.sql  # Tabla device_trials (trial 3 días)
+│       ├── V3__create_device_trials.sql  # Legado: trial por dispositivo
 │       ├── V4__spatial_indexes_and_views.sql  # Vistas, funciones bbox
 │       └── V5__seed_categories.sql       # Catálogo de rubros + alias
 └── scripts/
@@ -89,7 +89,7 @@ Para ejecutar la API sin Docker, desde la raíz del repositorio usar `./gradlew 
 | `GET` | `/health` | Health check sin base de datos. |
 | `POST` | `/api/v1/auth/login` | Inicia sesión con usuario/contraseña y devuelve un JWT con perfil `ADMIN` o `USER`. |
 | `GET` | `/api/v1/shops?category=&lonMin=&latMin=&lonMax=&latMax=` | Locales disponibles para mapa y filtro opcional; requiere JWT. |
-| `GET` | `/api/v1/shops/{id}` | Ficha del local. Enviar `X-Device-Id` para habilitar métricas con trial/pase vigente. |
+| `GET` | `/api/v1/shops/{id}` | Ficha del local. Las métricas se habilitan según la suscripción de la cuenta autenticada. |
 | `POST` | `/api/v1/votes` | Voto anónimo. Requiere `X-Fingerprint-Hash`; acepta `X-Browser-Token`. |
 | `POST` | `/api/v1/shops/{id}/report-rented` | Incrementa reportes y pasa a revisión al tercer reporte. |
 | `POST` | `/api/v1/auth/trial` | Inicia o consulta el trial único por dispositivo. |
@@ -111,7 +111,7 @@ Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con
 
 ## Pago simulado
 
-`POST /api/v1/payments/checkout` recibe `deviceId` y `paymentToken`. No recibe ni almacena datos de tarjeta. Usar `mock_approve` para simular un cobro aprobado y activar el pase por 30 días; usar `mock_decline` para simular un rechazo. Cada intento queda auditado en `mock_payments`, incluyendo importe simulado y referencia del proveedor mock.
+`POST /api/v1/payments/checkout` recibe `paymentToken` y asocia la operación a la cuenta indicada por el JWT. No recibe ni almacena datos de tarjeta. `MockPaymentProcessor` usa `mock_approve` para simular un cobro aprobado y activar un pase de 30 días, o `mock_decline` para simular un rechazo. Cada intento queda auditado en `mock_payments`, incluyendo cuenta, importe simulado y referencia del proveedor mock.
 
 ## Consola interna y web
 
@@ -170,13 +170,13 @@ adb reverse tcp:8081 tcp:8081
 | `fingerprint_hash` | `TEXT` | SHA-256 de huella técnica anónima |
 | `browser_token` | `TEXT` | Token de localStorage del vecino |
 
-### `device_trials` — Trial y pase por dispositivo
+### `subscriptions` — Trial y pase por cuenta
 
 | Columna | Tipo | Descripción |
 |---|---|---|
-| `device_id` | `TEXT` UNIQUE | Hardware ID de la app Android |
+| `user_id` | `UUID` PK/FK | Cuenta autenticada en `app_users` |
 | `status` | `trial_status` | `ACTIVE_TRIAL \| TRIAL_EXPIRED \| PASS_ACTIVE \| PASS_EXPIRED` |
-| `trial_started_at` | `TIMESTAMPTZ` | Inicio del trial |
+| `trial_started_at` | `TIMESTAMPTZ` | Inicio del trial de la cuenta |
 | `trial_expires_at` | `TIMESTAMPTZ` GENERATED | `trial_started_at + 3 days` |
 | `pass_activated_at` | `TIMESTAMPTZ` | Nulo hasta compra |
 | `pass_expires_at` | `TIMESTAMPTZ` | `pass_activated_at + 30 days` |
@@ -218,5 +218,5 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY mv_shop_hourly_distribution;
 - [x] PostgreSQL con extensión `postgis` habilitada
 - [x] Tabla `shops` con geometría `GEOGRAPHY(Point,4326)`, `status`, `last_verified_at`, `attributes JSONB`
 - [x] Tabla `votes` con `category`, `frequency` (nullable), `day_of_week`, `hour_bucket`, `fingerprint_hash`, `created_at`
-- [x] Tabla `device_trials` con `device_id` único para trial de 3 días
+- [x] Tabla `subscriptions` asociada a `app_users` para trial de 3 días y pase de 30 días
 - [x] Índice GIST espacial + función `fn_shops_in_bbox` para validar < 50 ms

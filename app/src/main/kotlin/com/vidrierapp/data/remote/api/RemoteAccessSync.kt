@@ -7,13 +7,12 @@ private const val APPROVED_PAYMENT_TOKEN = "mock_approve"
 
 class RemoteAccessSync(
     private val api: VidrierAppApiService,
-    private val deviceId: suspend () -> String
 ) {
     suspend fun startTrial() {
-        api.startTrial(TrialRequestDto(deviceId()))
+        api.startTrial(TrialRequestDto)
     }
 
     suspend fun checkout() {
-        api.checkout(CheckoutRequestDto(deviceId(), APPROVED_PAYMENT_TOKEN))
+        api.checkout(CheckoutRequestDto(APPROVED_PAYMENT_TOKEN))
     }
 }

@@ -44,9 +44,9 @@ interface PlatformRepository : UserAccountRepository, CategoryAliasRepository {
     fun shopDetail(id: UUID, metricsAllowed: Boolean): ShopDetailResponse
     fun submitVote(shopId: UUID, category: NormalizedCategory, frequency: String?, fingerprint: String, browserToken: String, ipAddress: String): UUID
     fun reportRented(id: UUID): ReportRentedResponse
-    fun startTrial(deviceId: String): TrialResponse
-    fun checkoutPass(deviceId: String, processor: PaymentGateway, paymentToken: String): MockCheckoutResponse
-    fun hasActiveAccess(deviceId: String?): Boolean
+    fun startTrial(username: String): TrialResponse
+    fun checkoutPass(username: String, processor: PaymentGateway, paymentToken: String): MockCheckoutResponse
+    fun hasActiveAccess(username: String): Boolean
     fun createShop(request: CreateShopRequest): ShopSummaryResponse
     fun addCategoryAlias(alias: String, canonicalSlug: String): Int
     fun reclassifyVotes(alias: String, canonicalSlug: String): Int

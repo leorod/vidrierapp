@@ -17,15 +17,15 @@ class VidrierAppUseCases(
     data class SubmittedVote(val id: UUID, val category: String, val classified: Boolean)
 
     fun shops(category: String?, bounds: Bounds?) = repository.shops(category, bounds)
-    fun shopDetail(id: UUID, deviceId: String?) = repository.shopDetail(id, repository.hasActiveAccess(deviceId))
+    fun shopDetail(id: UUID, username: String) = repository.shopDetail(id, repository.hasActiveAccess(username))
     fun submitVote(shopId: UUID, category: String?, otherCategory: String?, frequency: String?, fingerprint: String, browserToken: String, ipAddress: String): SubmittedVote {
         val normalized = categoryNormalizer.normalize(category, otherCategory)
         val id = repository.submitVote(shopId, normalized, frequency, fingerprint, browserToken, ipAddress)
         return SubmittedVote(id, normalized.slug, normalized.classified)
     }
     fun reportRented(id: UUID) = repository.reportRented(id)
-    fun startTrial(deviceId: String) = repository.startTrial(deviceId)
-    fun checkoutPass(deviceId: String, paymentToken: String) = repository.checkoutPass(deviceId, paymentGateway, paymentToken)
+    fun startTrial(username: String) = repository.startTrial(username)
+    fun checkoutPass(username: String, paymentToken: String) = repository.checkoutPass(username, paymentGateway, paymentToken)
     fun zoneSummaries() = repository.zoneSummaries()
     fun resolveLocation(placeId: String?, address: String?) = geocodingGateway.resolve(placeId, address)
     fun createShop(request: CreateShopRequest) = repository.createShop(request.also {
