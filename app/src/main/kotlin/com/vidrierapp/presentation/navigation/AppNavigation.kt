@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -38,6 +39,7 @@ import com.vidrierapp.presentation.visit.LogVisitScreen
 import com.vidrierapp.presentation.visit.MyVisitsHubScreen
 import com.vidrierapp.presentation.auth.AuthViewModel
 import com.vidrierapp.presentation.auth.LoginScreen
+import com.vidrierapp.presentation.profile.ProfileScreen
 
 private data class TopLevelTab(
     val destination: NavKey,
@@ -47,7 +49,8 @@ private data class TopLevelTab(
 
 private val topLevelTabs = listOf(
     TopLevelTab(MapDestination, R.string.nav_explore, Icons.Filled.Map),
-    TopLevelTab(VisitsHubDestination, R.string.nav_visits, Icons.AutoMirrored.Filled.MenuBook)
+    TopLevelTab(VisitsHubDestination, R.string.nav_visits, Icons.AutoMirrored.Filled.MenuBook),
+    TopLevelTab(ProfileDestination, R.string.nav_profile, Icons.Filled.Person),
 )
 
 @Composable
@@ -76,7 +79,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onTabSelected = { destination ->
                         backStack.clear()
                         backStack.add(destination)
-                    }
+                    },
                 )
             }
         }
@@ -126,6 +129,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         }
                     )
                 }
+                entry<ProfileDestination> {
+                    ProfileScreen(username = session.username, onLogout = authViewModel::logout)
+                }
                 entry<ShopDetailDestination> { destination ->
                     ShopDetailScreen(
                         shopId = destination.shopId,
@@ -151,7 +157,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 @Composable
 internal fun AppBottomBar(
     currentDestination: NavKey?,
-    onTabSelected: (NavKey) -> Unit
+    onTabSelected: (NavKey) -> Unit,
 ) {
     NavigationBar {
         topLevelTabs.forEach { tab ->
