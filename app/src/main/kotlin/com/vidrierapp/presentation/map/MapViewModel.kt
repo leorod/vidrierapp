@@ -67,6 +67,24 @@ class MapViewModel(
         }
     }
 
+    fun refresh() {
+        if (_uiState.value !is MapUiState.Success) return
+        viewModelScope.launch {
+            val shops = getShopsUseCase().first().getOrNull() ?: return@launch
+            val current = _uiState.value as? MapUiState.Success ?: return@launch
+            allShops = shops
+            val visible = applyFilter(shops, currentFilter)
+            _uiState.value = current.copy(
+                shops = visible,
+                categories = deriveCategories(shops),
+                isFromCache = false,
+                selectedShop = current.selectedShop?.let { selected ->
+                    visible.firstOrNull { it.id == selected.id }
+                }
+            )
+        }
+    }
+
     private suspend fun showCachedOrError(error: Throwable, categoryFilter: String?) {
         val cached = getCachedShopsUseCase().first().map { it.shop }
         if (cached.isNotEmpty()) {
