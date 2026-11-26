@@ -2,7 +2,36 @@
 
 API REST en **Ktor + Kotlin** y PostgreSQL 16 + PostGIS 3.4 con migraciones versionadas mediante Flyway.
 
-La organización de capas y las reglas de dependencia están documentadas en [`ARCHITECTURE.md`](ARCHITECTURE.md).
+## Arquitectura limpia
+
+El backend dirige sus dependencias hacia el núcleo de aplicación:
+
+```text
+Ktor routes (delivery)
+        |
+        v
+Application use cases
+        |
+        v
+Application ports <----- Infrastructure adapters
+                         (JDBC, Google Geocoding, mock payments)
+```
+
+- `application/`: orquesta los casos de uso. `VidrierAppUseCases` implementa los flujos de votos, pagos, mantenimiento y administración, y solo depende de puertos.
+- `application/port/`: interfaces para persistencia, usuarios, alias de categorías, pagos y geocodificación.
+- `auth/`: política de autenticación JWT; `AuthService` depende del puerto `UserAccountRepository`, no de JDBC.
+- `routes/`: adaptador de entrega Ktor. Valida entradas HTTP, obtiene el principal autenticado e invoca casos de uso; no accede directamente a JDBC ni a integraciones externas.
+- `service/`: adaptadores de infraestructura. `VidrierAppRepository` implementa PostgreSQL/JDBC, `GoogleGeocodingService` integra Google y `MockPaymentProcessor` implementa el gateway de pagos de desarrollo.
+- `config/` y `Application.kt`: composition root. Seleccionan e inyectan las implementaciones concretas.
+- `model/`: contratos HTTP de request/response; no deben incorporar detalles de persistencia.
+
+Reglas de dependencia:
+
+- Las rutas dependen de casos de uso, nunca directamente de repositorios JDBC o clientes externos.
+- Los casos de uso dependen de interfaces en `application.port`, nunca de adaptadores concretos.
+- Los adaptadores de infraestructura implementan los puertos y pueden depender de JDBC, HTTP o SDKs de terceros.
+- Las nuevas integraciones requieren primero un puerto, luego un adaptador conectado solo desde el composition root.
+- Los cambios de esquema viven en migraciones Flyway versionadas bajo `db/migrations/`.
 
 ## Estructura
 
