@@ -27,5 +27,7 @@ class AuthViewModel(private val sessionRepository: SessionRepository) : ViewMode
         }
     }
 
-    fun logout() = sessionRepository.logout()
+    fun logout() {
+        viewModelScope.launch { sessionRepository.logout() }
+    }
 }

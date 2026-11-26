@@ -12,6 +12,8 @@ data class UserSession(val token: String, val username: String, val role: String
 class SessionRepository(
     private val preferences: SharedPreferences,
     private val api: VidrierAppApiService,
+    private val onSessionStarted: suspend () -> Unit = {},
+    private val onSessionEnded: suspend () -> Unit = {},
 ) {
     private val _session = MutableStateFlow(readSession())
     val session = _session.asStateFlow()
@@ -25,12 +27,14 @@ class SessionRepository(
             .putString(ROLE_KEY, session.role)
             .apply()
         _session.value = session
+        onSessionStarted()
         return session
     }
 
-    fun logout() {
+    suspend fun logout() {
         preferences.edit().clear().apply()
         _session.value = null
+        onSessionEnded()
     }
 
     fun token(): String? = _session.value?.token

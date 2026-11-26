@@ -17,6 +17,7 @@ import com.vidrierapp.data.repository.RoomVisitRepository
 import com.vidrierapp.data.repository.SharedPreferencesPassRepository
 import com.vidrierapp.data.repository.SharedPreferencesReportedShopsRepository
 import com.vidrierapp.domain.location.LocationProvider
+import com.vidrierapp.domain.model.PassState
 import com.vidrierapp.domain.network.NetworkMonitor
 import com.vidrierapp.domain.repository.CachedShopRepository
 import com.vidrierapp.domain.repository.PassRepository
@@ -115,6 +116,8 @@ class AppContainer(private val context: Context) {
         SessionRepository(
             context.applicationContext.getSharedPreferences("user_session", Context.MODE_PRIVATE),
             apiService,
+            onSessionStarted = { syncRemote { passRepository.savePassState(remoteAccessSync.fetchPassState()) } },
+            onSessionEnded = { syncRemote { passRepository.savePassState(PassState()) } },
         )
     }
 

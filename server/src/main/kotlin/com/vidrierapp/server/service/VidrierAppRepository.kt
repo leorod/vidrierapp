@@ -119,6 +119,15 @@ open class VidrierAppRepository(private val dataSource: DataSource) : PlatformRe
         } catch (error: Exception) { connection.rollback(); throw error } finally { connection.autoCommit = true }
     }
 
+    override fun subscription(username: String): TrialResponse = dataSource.connection.use { connection ->
+        val userId = userId(connection, username)
+        connection.prepareStatement("SELECT EXISTS (SELECT 1 FROM subscriptions WHERE user_id = ?)").use { statement ->
+            statement.setObject(1, userId)
+            val exists = statement.executeQuery().use { it.next(); it.getBoolean(1) }
+            if (exists) subscriptionResponse(connection, userId, username) else TrialResponse(username, "NONE", Instant.EPOCH.toString(), false)
+        }
+    }
+
     override fun hasActiveAccess(username: String): Boolean = dataSource.connection.use { connection ->
         connection.prepareStatement("SELECT EXISTS (SELECT 1 FROM subscriptions s JOIN app_users u ON u.id = s.user_id WHERE u.username = ? AND COALESCE(s.pass_expires_at, s.trial_expires_at) > NOW())").use { statement -> statement.setString(1, username); statement.executeQuery().use { it.next(); it.getBoolean(1) } }
     }

@@ -2,6 +2,7 @@ package com.vidrierapp.data.remote.api
 
 import com.vidrierapp.data.remote.dto.ReportRentedResponseDto
 import com.vidrierapp.data.remote.dto.ShopDto
+import com.vidrierapp.data.remote.dto.AccessDto
 import com.vidrierapp.data.remote.dto.CheckoutRequestDto
 import com.vidrierapp.data.remote.dto.TrialRequestDto
 import com.vidrierapp.data.remote.dto.AuthResponseDto
@@ -30,6 +31,9 @@ interface VidrierAppApiService {
     suspend fun reportRented(
         @Path("id") id: String
     ): ReportRentedResponseDto
+
+    @GET("api/v1/auth/access")
+    suspend fun access(): AccessDto
 
     @POST("api/v1/auth/trial")
     suspend fun startTrial(@Body request: TrialRequestDto)

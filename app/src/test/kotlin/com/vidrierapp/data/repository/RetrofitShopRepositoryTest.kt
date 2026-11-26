@@ -3,6 +3,7 @@ package com.vidrierapp.data.repository
 import com.vidrierapp.data.local.dao.CachedLocalDao
 import com.vidrierapp.data.local.entity.CachedLocalEntity
 import com.vidrierapp.data.remote.api.VidrierAppApiService
+import com.vidrierapp.data.remote.dto.AccessDto
 import com.vidrierapp.data.remote.dto.AuthResponseDto
 import com.vidrierapp.data.remote.dto.CheckoutRequestDto
 import com.vidrierapp.data.remote.dto.LoginRequestDto
@@ -74,6 +75,8 @@ class RetrofitShopRepositoryTest {
         }
 
         override suspend fun login(request: LoginRequestDto): AuthResponseDto = throw UnsupportedOperationException()
+        override suspend fun access() = AccessDto("NONE", "1970-01-01T00:00:00Z")
+
         override suspend fun startTrial(request: TrialRequestDto) = Unit
 
         override suspend fun checkout(request: CheckoutRequestDto) = Unit

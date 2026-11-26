@@ -25,6 +25,7 @@ class VidrierAppUseCases(
     }
     fun reportRented(id: UUID) = repository.reportRented(id)
     fun startTrial(username: String) = repository.startTrial(username)
+    fun subscription(username: String) = repository.subscription(username)
     fun checkoutPass(username: String, paymentToken: String) = repository.checkoutPass(username, paymentGateway, paymentToken)
     fun zoneSummaries() = repository.zoneSummaries()
     fun resolveLocation(placeId: String?, address: String?) = geocodingGateway.resolve(placeId, address)

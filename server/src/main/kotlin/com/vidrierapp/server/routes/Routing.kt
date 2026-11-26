@@ -65,6 +65,10 @@ fun Application.configureRouting(useCases: VidrierAppUseCases, authService: Auth
                 call.respond(HttpStatusCode.Accepted, useCases.reportRented(call.uuidParameter("id")))
             }
 
+            get("/auth/access") {
+                call.respond(useCases.subscription(call.authenticatedUsername()))
+            }
+
             post("/auth/trial") {
                 call.respond(useCases.startTrial(call.authenticatedUsername()))
             }

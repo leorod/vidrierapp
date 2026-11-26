@@ -78,6 +78,8 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
 
     override fun hasActiveAccess(username: String) = username in activeUsers
 
+    override fun subscription(username: String) = if (username in activeUsers) TrialResponse(username, "PASS_ACTIVE", Instant.parse("2026-12-28T00:00:00Z").toString(), true) else TrialResponse(username, "NONE", Instant.EPOCH.toString(), false)
+
     override fun submitVote(shopId: UUID, category: NormalizedCategory, frequency: String?, fingerprint: String, browserToken: String, ipAddress: String): UUID {
         if (duplicate) throw DuplicateVoteException()
         if (rateLimited) throw RateLimitExceededException()
@@ -203,6 +205,12 @@ class ApiRoutesTest {
         val body = client.get("/api/v1/shops/$SHOP_ID") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
         assertTrue(body.contains("\"metricsAvailable\":true"))
         assertTrue(body.contains("\"DIARIA\":4"))
+    }
+
+    @Test
+    fun `access reports the pass of the authenticated account`() = apiTest(FakeRepository().apply { activeUsers = setOf(USER_USERNAME) }) {
+        val paid = client.get("/api/v1/auth/access") { header(HttpHeaders.Authorization, "Bearer ${login(USER_USERNAME, USER_PASSWORD)}") }.bodyAsText()
+        assertTrue(paid.contains("\"status\":\"PASS_ACTIVE\""))
     }
 
     @Test

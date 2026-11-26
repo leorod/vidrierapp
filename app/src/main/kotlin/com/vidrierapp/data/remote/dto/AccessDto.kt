@@ -6,4 +6,7 @@ import kotlinx.serialization.Serializable
 data object TrialRequestDto
 
 @Serializable
+data class AccessDto(val status: String, val expiresAt: String)
+
+@Serializable
 data class CheckoutRequestDto(val paymentToken: String)

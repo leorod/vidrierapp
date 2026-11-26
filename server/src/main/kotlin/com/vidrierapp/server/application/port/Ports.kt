@@ -47,6 +47,7 @@ interface PlatformRepository : UserAccountRepository, CategoryAliasRepository {
     fun startTrial(username: String): TrialResponse
     fun checkoutPass(username: String, processor: PaymentGateway, paymentToken: String): MockCheckoutResponse
     fun hasActiveAccess(username: String): Boolean
+    fun subscription(username: String): TrialResponse
     fun createShop(request: CreateShopRequest): ShopSummaryResponse
     fun addCategoryAlias(alias: String, canonicalSlug: String): Int
     fun reclassifyVotes(alias: String, canonicalSlug: String): Int
