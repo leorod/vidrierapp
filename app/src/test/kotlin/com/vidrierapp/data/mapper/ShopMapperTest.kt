@@ -5,11 +5,24 @@ import com.vidrierapp.data.remote.dto.VoteDto
 import com.vidrierapp.domain.model.ConsumptionFrequency
 import com.vidrierapp.domain.model.TimeSlot
 import com.vidrierapp.domain.model.Weekday
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ShopMapperTest {
+
+    @Test
+    fun `decodes a shop listed without neighborhood, surface or rent`() {
+        val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+        val dto = json.decodeFromString<ShopDto>(
+            """{"id":"s9","address":"Guamini 2351","latitude":-34.66,"longitude":-58.51,"status":"AVAILABLE"}"""
+        )
+
+        assertEquals("", dto.neighborhood)
+        assertEquals(0, dto.surfaceAreaM2)
+        assertEquals("", dto.rentalPrice)
+    }
 
     @Test
     fun `map ShopDto to Domain Shop correctly`() {
