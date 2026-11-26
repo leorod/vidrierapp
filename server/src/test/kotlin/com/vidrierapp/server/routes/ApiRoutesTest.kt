@@ -1,6 +1,7 @@
 package com.vidrierapp.server.routes
 
 import com.vidrierapp.server.configureApp
+import com.vidrierapp.server.application.VidrierAppUseCases
 import com.vidrierapp.server.auth.AuthConfig
 import com.vidrierapp.server.auth.AuthService
 import com.vidrierapp.server.auth.AuthUser
@@ -102,7 +103,13 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
 }
 
 private fun apiTest(repository: FakeRepository = FakeRepository(), block: suspend ApplicationTestBuilder.(FakeRepository) -> Unit) = testApplication {
-    application { configureApp(repository, MockPaymentProcessor(), GoogleGeocodingService(""), testAuthService(repository), null) }
+    application {
+        configureApp(
+            testAuthService(repository),
+            VidrierAppUseCases(repository, CategoryNormalizer(repository), MockPaymentProcessor(), GoogleGeocodingService("")),
+            null,
+        )
+    }
     block(repository)
 }
 

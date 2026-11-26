@@ -1,15 +1,17 @@
 package com.vidrierapp.server.service
 
+import com.vidrierapp.server.application.port.CategoryAliasRepository
+import com.vidrierapp.server.application.port.EmptyCategoryAliasRepository
 import java.text.Normalizer
 
 data class NormalizedCategory(val slug: String, val classified: Boolean, val rawInput: String?)
 
-class CategoryNormalizer(private val repository: VidrierAppRepository? = null) {
+class CategoryNormalizer(private val repository: CategoryAliasRepository = EmptyCategoryAliasRepository) {
     fun normalize(category: String?, otherCategory: String?): NormalizedCategory {
         val input = otherCategory?.takeIf { it.isNotBlank() } ?: category?.takeIf { it.isNotBlank() }
             ?: throw IllegalArgumentException("category or otherCategory is required")
         val normalized = sanitize(input)
-        val aliases = requireNotNull(repository) { "A repository is required to normalize categories" }.categoryAliases()
+        val aliases = repository.categoryAliases()
         aliases[normalized]?.let { return NormalizedCategory(it, true, otherCategory) }
         val match = aliases.minByOrNull { levenshtein(normalized, it.key) }
         if (match != null && levenshtein(normalized, match.key) <= fuzzyThreshold(normalized)) {

@@ -2,6 +2,8 @@
 
 API REST en **Ktor + Kotlin** y PostgreSQL 16 + PostGIS 3.4 con migraciones versionadas mediante Flyway.
 
+La organización de capas y las reglas de dependencia están documentadas en [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 ## Estructura
 
 ```

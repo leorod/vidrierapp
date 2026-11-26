@@ -9,16 +9,12 @@ import com.vidrierapp.server.model.UpdateShopStatusRequest
 import com.vidrierapp.server.model.GeoResolveRequest
 import com.vidrierapp.server.model.AddCategoryAliasRequest
 import com.vidrierapp.server.model.ReclassifyVotesRequest
-import com.vidrierapp.server.model.MaintenanceRunResponse
 import com.vidrierapp.server.model.VoteResponse
 import com.vidrierapp.server.model.LoginRequest
 import com.vidrierapp.server.auth.AuthService
 import com.vidrierapp.server.auth.UserRole
+import com.vidrierapp.server.application.VidrierAppUseCases
 import com.vidrierapp.server.service.Bounds
-import com.vidrierapp.server.service.CategoryNormalizer
-import com.vidrierapp.server.service.VidrierAppRepository
-import com.vidrierapp.server.service.MockPaymentProcessor
-import com.vidrierapp.server.service.GoogleGeocodingService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -33,7 +29,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import java.util.UUID
 
-fun Application.configureRouting(repository: VidrierAppRepository, normalizer: CategoryNormalizer, paymentProcessor: MockPaymentProcessor, geocodingService: GoogleGeocodingService, authService: AuthService) {
+fun Application.configureRouting(useCases: VidrierAppUseCases, authService: AuthService) {
     routing {
         get("/health") { call.respond(mapOf("status" to "ok")) }
 
@@ -50,80 +46,73 @@ fun Application.configureRouting(repository: VidrierAppRepository, normalizer: C
                     ?: throw IllegalArgumentException("X-Fingerprint-Hash header is required")
                 val browserToken = (call.request.headers["X-Browser-Token"] ?: request.clientToken)?.takeIf { it.length in 16..256 }
                     ?: throw IllegalArgumentException("X-Browser-Token header is required")
-                val category = normalizer.normalize(request.category, request.resolvedOther())
-                val voteId = repository.submitVote(call.parseUuid(request.resolvedShopId(), "shopId"), category, request.frequency, fingerprint, browserToken, call.clientIp())
-                call.respond(HttpStatusCode.Created, VoteResponse(voteId.toString(), category.slug, category.classified))
+                val vote = useCases.submitVote(call.parseUuid(request.resolvedShopId(), "shopId"), request.category, request.resolvedOther(), request.frequency, fingerprint, browserToken, call.clientIp())
+                call.respond(HttpStatusCode.Created, VoteResponse(vote.id.toString(), vote.category, vote.classified))
             }
 
             authenticate("auth-jwt") {
             get("/shops") {
                 val category = call.request.queryParameters["category"]
-                call.respond(repository.shops(category, call.boundsOrNull()))
+                call.respond(useCases.shops(category, call.boundsOrNull()))
             }
 
             get("/shops/{id}") {
                 val id = call.uuidParameter("id")
-                call.respond(repository.shopDetail(id, repository.hasActiveAccess(call.request.headers["X-Device-Id"])))
+                call.respond(useCases.shopDetail(id, call.request.headers["X-Device-Id"]))
             }
 
             post("/shops/{id}/report-rented") {
-                call.respond(HttpStatusCode.Accepted, repository.reportRented(call.uuidParameter("id")))
+                call.respond(HttpStatusCode.Accepted, useCases.reportRented(call.uuidParameter("id")))
             }
 
             post("/auth/trial") {
                 val request = call.receive<TrialRequest>()
                 require(request.deviceId.isNotBlank()) { "deviceId is required" }
-                call.respond(repository.startTrial(request.deviceId))
+                call.respond(useCases.startTrial(request.deviceId))
             }
 
             post("/payments/checkout") {
                 val request = call.receive<MockCheckoutRequest>()
                 require(request.deviceId.isNotBlank()) { "deviceId is required" }
-                call.respond(repository.checkoutPass(request.deviceId, paymentProcessor, request.paymentToken))
+                call.respond(useCases.checkoutPass(request.deviceId, request.paymentToken))
             }
 
-            get("/zones/summary") { call.respond(repository.zoneSummaries()) }
+            get("/zones/summary") { call.respond(useCases.zoneSummaries()) }
 
             route("/admin") {
                 post("/geo/resolve") {
                     call.requireAdmin()
                     val request = call.receive<GeoResolveRequest>()
-                    call.respond(geocodingService.resolve(request.placeId, request.address))
+                    call.respond(useCases.resolveLocation(request.placeId, request.address))
                 }
                 post("/shops") {
                     call.requireAdmin()
                     val request = call.receive<CreateShopRequest>()
-                    val validLocation = geocodingService.validate(request.geoResolutionId, request.latitude, request.longitude, request.confirmFarLocation)
-                    require(validLocation) { "Selected location is more than 150 meters from the resolved address; set confirmFarLocation to override" }
-                    call.respond(HttpStatusCode.Created, repository.createShop(request.copy(locationOverrideUsed = request.locationOverrideUsed || request.confirmFarLocation)))
+                    call.respond(HttpStatusCode.Created, useCases.createShop(request))
                 }
                 post("/shops/{id}/status") {
                     call.requireAdmin()
-                    repository.updateShopStatus(call.uuidParameter("id"), call.receive<UpdateShopStatusRequest>().status)
+                    useCases.updateShopStatus(call.uuidParameter("id"), call.receive<UpdateShopStatusRequest>().status)
                     call.respond(HttpStatusCode.NoContent)
                 }
                 post("/maintenance/run") {
                     call.requireAdmin()
-                    val expiredShops = repository.expireStaleShops()
-                    val expiredAccess = repository.expireAccessStatuses()
-                    repository.refreshAggregates()
-                    call.respond(MaintenanceRunResponse(expiredShops, expiredAccess, true))
+                    call.respond(useCases.runMaintenance())
                 }
                 post("/categories/aliases") {
                     call.requireAdmin()
                     val request = call.receive<AddCategoryAliasRequest>()
-                    repository.addCategoryAlias(request.alias, request.canonicalSlug)
+                    useCases.addCategoryAlias(request.alias, request.canonicalSlug)
                     call.respond(HttpStatusCode.NoContent)
                 }
                 get("/categories/unclassified") {
                     call.requireAdmin()
-                    call.respond(repository.unclassifiedCategories())
+                    call.respond(useCases.unclassifiedCategories())
                 }
                 post("/categories/reclassify") {
                     call.requireAdmin()
                     val request = call.receive<ReclassifyVotesRequest>()
-                    val updated = repository.reclassifyVotes(request.alias, request.canonicalSlug)
-                    repository.refreshAggregates()
+                    val updated = useCases.reclassifyVotes(request.alias, request.canonicalSlug)
                     call.respond(mapOf("reclassifiedVotes" to updated))
                 }
             }

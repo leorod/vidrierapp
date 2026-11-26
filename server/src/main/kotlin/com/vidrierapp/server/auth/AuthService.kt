@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import com.vidrierapp.server.model.AuthResponse
-import com.vidrierapp.server.service.VidrierAppRepository
+import com.vidrierapp.server.application.port.UserAccountRepository
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Clock
@@ -23,7 +23,7 @@ data class AuthConfig(
 
 class AuthService(
     private val config: AuthConfig,
-    private val repository: VidrierAppRepository,
+    private val repository: UserAccountRepository,
     private val clock: Clock = Clock.systemUTC(),
 ) {
     private val algorithm = Algorithm.HMAC256(config.jwtSecret)
