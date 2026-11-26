@@ -70,10 +70,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-vidrierapp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vidrierapp_secret}
       JWT_SECRET: ${JWT_SECRET:-change-me-before-deploying}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-admin-password}
-      USER_USERNAME: ${USER_USERNAME:-user}
-      USER_PASSWORD: ${USER_PASSWORD:-change-user-password}
       MAPS_API_KEY: ${MAPS_API_KEY:-}
       WEB_DIR: /app/web
     volumes:

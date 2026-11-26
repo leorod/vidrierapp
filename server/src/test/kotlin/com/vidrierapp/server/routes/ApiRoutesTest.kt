@@ -3,6 +3,8 @@ package com.vidrierapp.server.routes
 import com.vidrierapp.server.configureApp
 import com.vidrierapp.server.auth.AuthConfig
 import com.vidrierapp.server.auth.AuthService
+import com.vidrierapp.server.auth.AuthUser
+import com.vidrierapp.server.auth.UserRole
 import com.vidrierapp.server.model.ReportRentedResponse
 import com.vidrierapp.server.model.ShopDetailResponse
 import com.vidrierapp.server.model.ShopSummaryResponse
@@ -54,6 +56,12 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
     var statusUpdates = mutableListOf<Pair<UUID, String>>()
     var activeDevices = setOf<String>()
     var sampleSufficient = true
+    val users = mapOf(
+        ADMIN_USERNAME to AuthUser(ADMIN_USERNAME, "210000:MDEyMzQ1Njc4OWFiY2RlZg==:ot+As7/w2nV4YKMwo4zogAUyHZIe0jttdo+puhn8TXQ=", UserRole.ADMIN),
+        USER_USERNAME to AuthUser(USER_USERNAME, "210000:ZmVkY2JhOTg3NjU0MzIxMA==:c0KTf8K/8yIq1DDY03ZbYQqpZRSL4mFrYg150emEoZ4=", UserRole.USER),
+    )
+
+    override fun findAuthUser(username: String) = users[username]
 
     override fun categoryAliases() = mapOf("cafeteria" to "cafeteria", "verduleria" to "verduleria")
 
@@ -94,11 +102,11 @@ private class FakeRepository : VidrierAppRepository(unusedDataSource) {
 }
 
 private fun apiTest(repository: FakeRepository = FakeRepository(), block: suspend ApplicationTestBuilder.(FakeRepository) -> Unit) = testApplication {
-    application { configureApp(repository, MockPaymentProcessor(), GoogleGeocodingService(""), testAuthService(), null) }
+    application { configureApp(repository, MockPaymentProcessor(), GoogleGeocodingService(""), testAuthService(repository), null) }
     block(repository)
 }
 
-private fun testAuthService() = AuthService(AuthConfig("test-secret", ADMIN_USERNAME, ADMIN_PASSWORD, USER_USERNAME, USER_PASSWORD))
+private fun testAuthService(repository: VidrierAppRepository) = AuthService(AuthConfig("test-secret"), repository)
 
 private suspend fun ApplicationTestBuilder.postJson(path: String, body: String, headers: Map<String, String> = emptyMap()) =
     client.post(path) {

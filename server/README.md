@@ -84,7 +84,15 @@ Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con
 
 ## Consola interna y web
 
-Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola inicia sesión contra el mismo backend que Android y solo permite continuar a perfiles `ADMIN`; el JWT se conserva durante la pestaña actual. Configurar `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `USER_USERNAME` y `USER_PASSWORD` en `.env` antes de desplegar.
+Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola inicia sesión contra el mismo backend que Android y solo permite continuar a perfiles `ADMIN`; el JWT se conserva durante la pestaña actual. Configurar `JWT_SECRET` en `.env` antes de desplegar.
+
+Las cuentas se guardan en `app_users` y las contraseñas se almacenan como hashes PBKDF2-SHA256. Tras ejecutar las migraciones, cargar las cuentas dummy de desarrollo con:
+
+```bash
+./scripts/seed_dummy_users.sh
+```
+
+El script es idempotente y crea estas cuentas: `admin` / `Admin123!` (perfil `ADMIN`), `usuario1` / `User123!` y `usuario2` / `User123!` (perfiles `USER`). No usar estas credenciales fuera de desarrollo.
 
 ## Conectar la app
 

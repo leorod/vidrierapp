@@ -48,11 +48,7 @@ fun Application.module() {
         GoogleGeocodingService(System.getenv("MAPS_API_KEY") ?: ""),
         AuthService(AuthConfig(
             jwtSecret = requiredEnvironment("JWT_SECRET"),
-            adminUsername = requiredEnvironment("ADMIN_USERNAME"),
-            adminPassword = requiredEnvironment("ADMIN_PASSWORD"),
-            userUsername = requiredEnvironment("USER_USERNAME"),
-            userPassword = requiredEnvironment("USER_PASSWORD"),
-        )),
+        ), repository),
         System.getenv("WEB_DIR") ?: "web",
     )
 }
