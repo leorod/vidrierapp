@@ -16,7 +16,7 @@ class ShopMapperTest {
     fun `decodes a shop listed without neighborhood, surface or rent`() {
         val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
         val dto = json.decodeFromString<ShopDto>(
-            """{"id":"s9","address":"Guamini 2351","latitude":-34.66,"longitude":-58.51,"status":"AVAILABLE"}"""
+            """{"id":"s9","address":"Calle Falsa 123","latitude":-34.66,"longitude":-58.51,"status":"AVAILABLE"}"""
         )
 
         assertEquals("", dto.neighborhood)
