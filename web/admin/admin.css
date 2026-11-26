@@ -2,8 +2,11 @@
 body { margin: 0; font-family: system-ui, sans-serif; background: #f6f5f1; color: #1c1b1f; }
 .bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #3b2f6b; color: #fff; flex-wrap: wrap; gap: 8px; }
 .bar h1 { margin: 0; font-size: 1.2rem; }
-.token input { margin-left: 8px; padding: 6px; }
+.session { display: flex; align-items: center; gap: 12px; }
+.session button { min-height: 36px; }
 main { max-width: 960px; margin: 16px auto; padding: 0 12px; display: grid; gap: 16px; }
+.login-main { min-height: 100vh; display: grid; place-items: center; margin: 0 auto; }
+.login-card { width: min(100%, 420px); }
 .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: .9rem; flex: 1; }
 .check { flex-direction: row; align-items: center; gap: 8px; }

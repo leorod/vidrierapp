@@ -2,10 +2,21 @@
   'use strict';
 
   var API = '/api/v1';
+  var SESSION_KEY = 'vidrierapp.admin.session';
   var DEFAULT_CENTER = [-34.6555, -58.5035];
-  var state = { resolutionId: null, map: null, pin: null, zone: null };
+  var state = { resolutionId: null, session: readSession(), map: null, pin: null, zone: null };
 
   function $(id) { return document.getElementById(id); }
+
+  function readSession() {
+    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (_) { return null; }
+  }
+
+  function setSession(session) {
+    state.session = session;
+    if (session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else sessionStorage.removeItem(SESSION_KEY);
+  }
 
   function say(id, text, isError) {
     var el = $(id);
@@ -15,20 +26,47 @@
 
   function call(path, method, body) {
     var headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-    var token = $('token').value.trim();
-    if (token) headers.Authorization = 'Bearer ' + token;
-    return fetch(API + path, {
-      method: method,
-      headers: headers,
-      body: body ? JSON.stringify(body) : undefined
-    }).then(function (res) {
-      if (res.status === 204) return null;
-      return res.json().catch(function () { return {}; }).then(function (data) {
-        if (!res.ok) throw new Error(data.message || ('HTTP ' + res.status));
-        return data;
+    if (state.session) headers.Authorization = 'Bearer ' + state.session.token;
+    return fetch(API + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined })
+      .then(function (res) {
+        if (res.status === 204) return null;
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok) throw new Error(data.message || ('HTTP ' + res.status));
+          return data;
+        });
       });
-    });
   }
+
+  function showLogin(message) {
+    $('login-view').hidden = false;
+    $('admin-view').hidden = true;
+    if (message) say('login-out', message, true);
+  }
+
+  function showAdmin() {
+    if (!state.session || state.session.role !== 'ADMIN') { showLogin('Esta consola requiere un perfil Administrador.'); return; }
+    $('login-view').hidden = true;
+    $('admin-view').hidden = false;
+    $('session-user').textContent = state.session.username + ' · Administrador';
+    if (state.map) state.map.invalidateSize(); else initMap();
+    loadShops();
+  }
+
+  function login(event) {
+    event.preventDefault();
+    var form = $('login-form').elements;
+    say('login-out', '');
+    call('/auth/login', 'POST', { username: form.username.value.trim(), password: form.password.value })
+      .then(function (session) {
+        if (session.role !== 'ADMIN') throw new Error('Esta consola requiere un perfil Administrador.');
+        setSession(session);
+        form.password.value = '';
+        showAdmin();
+      })
+      .catch(function (error) { say('login-out', error.message, true); });
+  }
+
+  function logout() { setSession(null); state.resolutionId = null; showLogin(); }
 
   function formData() {
     var f = $('shop-form').elements;
@@ -124,18 +162,17 @@
   }
 
   function loadShops() {
-    fetch(API + '/shops').then(function (r) { return r.json(); }).then(function (shops) {
+    call('/shops', 'GET').then(function (shops) {
       var body = $('shops');
       body.textContent = '';
       shops.forEach(function (s) { body.appendChild(row(s)); });
       say('list-out', shops.length + ' locales disponibles.');
-    }).catch(function (e) { say('list-out', e.message, true); });
+    }).catch(function (e) { say('list-out', e.message, true); if (/Unauthorized|token/i.test(e.message)) logout(); });
   }
 
   function actionButton(label, secondary, handler) {
     var b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = label;
+    b.type = 'button'; b.textContent = label;
     if (secondary) b.className = 'secondary';
     b.addEventListener('click', handler);
     return b;
@@ -144,58 +181,29 @@
   function row(shop) {
     var tr = document.createElement('tr');
     [shop.address, shop.neighborhood, String(shop.totalVotes || 0)].forEach(function (text) {
-      var td = document.createElement('td');
-      td.textContent = text;
-      tr.appendChild(td);
+      var td = document.createElement('td'); td.textContent = text; tr.appendChild(td);
     });
-    var cell = document.createElement('td');
-    var box = document.createElement('div');
-    box.className = 'actions';
+    var cell = document.createElement('td'); var box = document.createElement('div'); box.className = 'actions';
     box.appendChild(actionButton('QR', false, function () { showPoster(shop.id, shop.address); }));
     box.appendChild(actionButton('Revalidar 60 días', true, function () { setStatus(shop.id, 'AVAILABLE'); }));
     box.appendChild(actionButton('En revisión', true, function () { setStatus(shop.id, 'UNDER_REVIEW'); }));
     box.appendChild(actionButton('Alquilado', true, function () { setStatus(shop.id, 'RENTED'); }));
-    cell.appendChild(box);
-    tr.appendChild(cell);
-    return tr;
+    cell.appendChild(box); tr.appendChild(cell); return tr;
   }
 
-  function setStatus(id, status) {
-    call('/admin/shops/' + id + '/status', 'POST', { status: status })
-      .then(loadShops)
-      .catch(function (e) { say('list-out', e.message, true); });
-  }
-
-  function runMaintenance() {
-    call('/admin/maintenance/run', 'POST').then(function (r) {
-      say('list-out', 'Locales caducados: ' + r.expiredShops + '.');
-      loadShops();
-    }).catch(function (e) { say('list-out', e.message, true); });
-  }
-
-  function voteUrl(id) {
-    return location.origin + '/?localId=' + encodeURIComponent(id);
-  }
-
+  function setStatus(id, status) { call('/admin/shops/' + id + '/status', 'POST', { status: status }).then(loadShops).catch(function (e) { say('list-out', e.message, true); }); }
+  function runMaintenance() { call('/admin/maintenance/run', 'POST').then(function (r) { say('list-out', 'Locales caducados: ' + r.expiredShops + '.'); loadShops(); }).catch(function (e) { say('list-out', e.message, true); }); }
+  function voteUrl(id) { return location.origin + '/?localId=' + encodeURIComponent(id); }
   function showPoster(id, address) {
-    if (typeof qrcode !== 'function') {
-      say('list-out', 'Falta web/admin/qrcode.js (librería de QR).', true);
-      return;
-    }
-    var qr = qrcode(0, 'M');
-    qr.addData(voteUrl(id));
-    qr.make();
-    var img = document.createElement('img');
-    img.alt = 'Código QR para votar en ' + address;
-    img.src = qr.createDataURL(6, 8);
-    var holder = $('qr');
-    holder.textContent = '';
-    holder.appendChild(img);
-    $('poster-url').textContent = address + ' · ' + voteUrl(id);
-    $('poster-card').hidden = false;
-    $('poster-card').scrollIntoView({ behavior: 'smooth' });
+    if (typeof qrcode !== 'function') { say('list-out', 'Falta web/admin/qrcode.js (librería de QR).', true); return; }
+    var qr = qrcode(0, 'M'); qr.addData(voteUrl(id)); qr.make();
+    var img = document.createElement('img'); img.alt = 'Código QR para votar en ' + address; img.src = qr.createDataURL(6, 8);
+    var holder = $('qr'); holder.textContent = ''; holder.appendChild(img);
+    $('poster-url').textContent = address + ' · ' + voteUrl(id); $('poster-card').hidden = false; $('poster-card').scrollIntoView({ behavior: 'smooth' });
   }
 
+  $('login-form').addEventListener('submit', login);
+  $('logout').addEventListener('click', logout);
   $('shop-form').addEventListener('submit', createShop);
   $('shop-form').elements.address.addEventListener('keydown', function (ev) {
     if (ev.key === 'Enter') { ev.preventDefault(); resolveLocation(); }
@@ -204,6 +212,5 @@
   $('reload').addEventListener('click', loadShops);
   $('maintenance').addEventListener('click', runMaintenance);
   $('print').addEventListener('click', function () { window.print(); });
-  initMap();
-  loadShops();
+  if (state.session) showAdmin(); else showLogin();
 }());

@@ -1,6 +1,7 @@
 package com.vidrierapp.data.remote.api
 
 import com.vidrierapp.data.remote.dto.CheckoutRequestDto
+import com.vidrierapp.data.remote.dto.LoginRequestDto
 import com.vidrierapp.data.remote.dto.ShopDto
 import com.vidrierapp.data.remote.dto.TrialRequestDto
 import okhttp3.MultipartBody
@@ -35,9 +36,10 @@ class PhotoPrivacyTest {
                 val allowedParameters = setOf(
                     String::class.java,
                     TrialRequestDto::class.java,
-                    CheckoutRequestDto::class.java
+                    CheckoutRequestDto::class.java,
+                    LoginRequestDto::class.java
                 )
-                val allowed = method.name in setOf("reportRented", "startTrial", "checkout") &&
+                val allowed = method.name in setOf("login", "reportRented", "startTrial", "checkout") &&
                     method.parameterTypes.all { it in allowedParameters || it.name == "kotlin.coroutines.Continuation" }
                 assertFalse("${method.name} is $name", name in forbidden && !allowed)
             }
