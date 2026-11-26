@@ -141,4 +141,30 @@ class MapViewModelTest {
         assertEquals("cafe", (viewModel.uiState.value as MapUiState.Success).selectedCategoryFilter)
         assertEquals(listOf<String?>(null, null), repository.requestedFilters)
     }
+
+    @Test
+    fun `refresh updates vote counts and keeps the selected shop`() {
+        val repository = FakeShopRepository(Result.success(listOf(shop("1").copy(totalVotes = 0))))
+        val viewModel = createViewModel(repository)
+        viewModel.selectShop((viewModel.uiState.value as MapUiState.Success).shops.first())
+
+        repository.result = Result.success(listOf(shop("1").copy(totalVotes = 1)))
+        viewModel.refresh()
+
+        val state = viewModel.uiState.value as MapUiState.Success
+        assertEquals(1, state.shops.first().totalVotes)
+        assertEquals(1, state.selectedShop?.totalVotes)
+    }
+
+    @Test
+    fun `refresh keeps the current shops when the request fails`() {
+        val shops = listOf(shop("1"))
+        val repository = FakeShopRepository(Result.success(shops))
+        val viewModel = createViewModel(repository)
+
+        repository.result = Result.failure(IllegalStateException("boom"))
+        viewModel.refresh()
+
+        assertEquals(MapUiState.Success(shops = shops), viewModel.uiState.value)
+    }
 }
