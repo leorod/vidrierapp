@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VidrierApp · Consola interna</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -15,14 +16,15 @@
   <section class="card">
     <h2>Alta de local</h2>
     <form id="shop-form">
-      <label>Dirección <input name="address" required></label>
-      <label>Place ID de Google (opcional) <input name="placeId"></label>
-      <button type="button" id="resolve">Resolver ubicación</button>
-      <p id="resolve-out" class="hint"></p>
-      <div class="row">
-        <label>Latitud <input name="latitude" type="number" step="any" required></label>
-        <label>Longitud <input name="longitude" type="number" step="any" required></label>
+      <div class="row search">
+        <label>Dirección <input name="address" required placeholder="Av. Juan Bautista Alberdi 6900, Mataderos"></label>
+        <button type="button" id="resolve">Buscar en el mapa</button>
       </div>
+      <p id="resolve-out" class="hint" role="status">Buscá la dirección y después tocá el mapa en el punto exacto del local.</p>
+      <div id="map" class="map" aria-label="Mapa para ubicar el local"></div>
+      <p id="pin-out" class="hint">Sin pin todavía.</p>
+      <input name="latitude" type="hidden">
+      <input name="longitude" type="hidden">
       <label class="check"><input type="checkbox" name="confirmFarLocation"> Confirmar ubicación a más de 150 m de la dirección resuelta</label>
       <div class="row">
         <label>Barrio <input name="neighborhood"></label>
@@ -34,7 +36,7 @@
         <label>Teléfono <input name="contactPhone"></label>
         <label>Email <input name="contactEmail" type="email"></label>
       </div>
-      <button type="submit">Crear local</button>
+      <button type="submit" id="create" disabled>Crear local</button>
       <p id="form-out" class="hint" role="status"></p>
     </form>
   </section>
@@ -66,6 +68,7 @@
     </div>
   </section>
 </main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="qrcode.js"></script>
 <script src="admin.js"></script>
 </body>

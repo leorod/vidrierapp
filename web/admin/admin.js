@@ -2,7 +2,8 @@
   'use strict';
 
   var API = '/api/v1';
-  var state = { resolutionId: null };
+  var DEFAULT_CENTER = [-34.6555, -58.5035];
+  var state = { resolutionId: null, map: null, pin: null, zone: null };
 
   function $(id) { return document.getElementById(id); }
 
@@ -43,21 +44,70 @@
       contactEmail: f.contactEmail.value.trim(),
       confirmFarLocation: f.confirmFarLocation.checked
     };
-    if (f.placeId.value.trim()) shop.placeId = f.placeId.value.trim();
     if (state.resolutionId) shop.geoResolutionId = state.resolutionId;
     return shop;
   }
 
+  function initMap() {
+    if (typeof L === 'undefined') {
+      say('resolve-out', 'No se pudo cargar el mapa. Revisá la conexión a internet.', true);
+      return;
+    }
+    state.map = L.map('map').setView(DEFAULT_CENTER, 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(state.map);
+    state.map.on('click', function (ev) { placePin(ev.latlng); });
+  }
+
+  function placePin(latlng) {
+    if (!state.pin) {
+      state.pin = L.marker(latlng, { draggable: true }).addTo(state.map);
+      state.pin.on('dragend', function () { placePin(state.pin.getLatLng()); });
+    } else {
+      state.pin.setLatLng(latlng);
+    }
+    var f = $('shop-form').elements;
+    f.latitude.value = latlng.lat.toFixed(6);
+    f.longitude.value = latlng.lng.toFixed(6);
+    var text = 'Pin en ' + f.latitude.value + ', ' + f.longitude.value + '.';
+    if (state.zone) {
+      var meters = Math.round(state.map.distance(latlng, state.zone.getLatLng()));
+      text += ' Está a ' + meters + ' m de la dirección.';
+      if (meters > state.zone.getRadius()) text += ' Para guardarlo, marcá la confirmación de abajo.';
+    }
+    say('pin-out', text);
+    $('create').disabled = false;
+  }
+
+  function clearPin() {
+    if (state.pin) { state.map.removeLayer(state.pin); state.pin = null; }
+    var f = $('shop-form').elements;
+    f.latitude.value = '';
+    f.longitude.value = '';
+    say('pin-out', 'Sin pin todavía.');
+    $('create').disabled = true;
+  }
+
   function resolveLocation() {
-    var placeId = $('shop-form').elements.placeId.value.trim();
-    if (!placeId) { say('resolve-out', 'Ingresá un Place ID.', true); return; }
-    call('/admin/geo/resolve', 'POST', { placeId: placeId }).then(function (r) {
+    var f = $('shop-form').elements;
+    var address = f.address.value.trim();
+    if (!address) { say('resolve-out', 'Escribí una dirección.', true); return; }
+    if (!state.map) return;
+    say('resolve-out', 'Buscando…');
+    call('/admin/geo/resolve', 'POST', { address: address }).then(function (r) {
       state.resolutionId = r.resolutionId;
-      var f = $('shop-form').elements;
-      f.latitude.value = r.latitude;
-      f.longitude.value = r.longitude;
-      say('resolve-out', 'Centro resuelto. Ajustá el pin a menos de ' + r.radiusMeters + ' m.');
-    }).catch(function (e) { say('resolve-out', e.message, true); });
+      var center = [r.latitude, r.longitude];
+      if (state.zone) state.map.removeLayer(state.zone);
+      state.zone = L.circle(center, { radius: r.radiusMeters || 150, color: '#3b2f6b', weight: 2, dashArray: '6 6', fillOpacity: 0.08 }).addTo(state.map);
+      state.map.fitBounds(state.zone.getBounds(), { padding: [20, 20] });
+      clearPin();
+      say('resolve-out', (r.formattedAddress || address) + '. Tocá el mapa dentro del círculo, en el punto exacto del local.');
+    }).catch(function (e) {
+      state.resolutionId = null;
+      say('resolve-out', 'No se pudo ubicar la dirección (' + e.message + '). Podés marcar el pin a mano y confirmar la ubicación.', true);
+    });
   }
 
   function createShop(ev) {
@@ -65,6 +115,9 @@
     call('/admin/shops', 'POST', formData()).then(function (shop) {
       say('form-out', 'Local creado: ' + shop.address);
       state.resolutionId = null;
+      if (state.zone) { state.map.removeLayer(state.zone); state.zone = null; }
+      clearPin();
+      $('shop-form').reset();
       loadShops();
       showPoster(shop.id, shop.address);
     }).catch(function (e) { say('form-out', e.message, true); });
@@ -144,9 +197,13 @@
   }
 
   $('shop-form').addEventListener('submit', createShop);
+  $('shop-form').elements.address.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); resolveLocation(); }
+  });
   $('resolve').addEventListener('click', resolveLocation);
   $('reload').addEventListener('click', loadShops);
   $('maintenance').addEventListener('click', runMaintenance);
   $('print').addEventListener('click', function () { window.print(); });
+  initMap();
   loadShops();
 }());

@@ -74,7 +74,8 @@ fun Application.configureRouting(repository: VidrierAppRepository, normalizer: C
             route("/admin") {
                 post("/geo/resolve") {
                     call.requireAdmin(adminToken)
-                    call.respond(geocodingService.resolve(call.receive<GeoResolveRequest>().placeId))
+                    val request = call.receive<GeoResolveRequest>()
+                    call.respond(geocodingService.resolve(request.placeId, request.address))
                 }
                 post("/shops") {
                     call.requireAdmin(adminToken)

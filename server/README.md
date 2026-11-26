@@ -64,7 +64,7 @@ Para ejecutar la API sin Docker, desde la raíz del repositorio usar `./gradlew 
 | `POST` | `/api/v1/payments/checkout` | Procesa un checkout simulado y activa el pase de 30 días solo si se aprueba. |
 | `GET` | `/api/v1/zones/summary` | Reportería histórica agregada por barrio, incluidos locales alquilados. |
 | `POST` | `/api/v1/admin/shops` | Alta de local; requiere `Authorization: Bearer $ADMIN_API_TOKEN`. |
-| `POST` | `/api/v1/admin/geo/resolve` | Resuelve `placeId` vía Google y entrega un centro transitorio para el pin manual. |
+| `POST` | `/api/v1/admin/geo/resolve` | Resuelve `address` (o `placeId`) vía Google y entrega un centro transitorio para el pin manual. |
 | `POST` | `/api/v1/admin/shops/{id}/status` | Actualiza estado/revalida un local; requiere token admin. |
 | `POST` | `/api/v1/admin/maintenance/run` | Fuerza caducidad a 60 días y refresca agregados; requiere token admin. |
 | `GET` | `/api/v1/admin/categories/unclassified` | Lista términos libres pendientes de curaduría. |
@@ -75,7 +75,7 @@ El detalle retorna métricas únicamente cuando el dispositivo tiene acceso vige
 
 Los votos requieren los headers `X-Fingerprint-Hash` y `X-Browser-Token`. El backend rechaza duplicados por token o huella durante 30 días y aplica un límite suave de 20 solicitudes por IP hasheada por hora para preservar el uso compartido de redes móviles. El mantenimiento (caducidad de locales y accesos) se ejecuta cada hora; los agregados de votos se refrescan cada 30 segundos. Ambos pueden ejecutarse explícitamente desde el endpoint admin.
 
-Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con el `placeId` de Google. El resultado contiene un `resolutionId` que se envía al crear el local junto al pin manual. El backend mantiene esa resolución solo 15 minutos, valida que el pin esté a 150 m o menos y nunca persiste las coordenadas recibidas de Google. Usar `confirmFarLocation: true` para la salida de emergencia documentada en el ADR; queda auditada como `locationOverrideUsed`.
+Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con la `address` escrita (o un `placeId` de Google). Requiere `MAPS_API_KEY` con Geocoding API habilitada. El resultado contiene un `resolutionId` que se envía al crear el local junto al pin manual. El backend mantiene esa resolución solo 15 minutos, valida que el pin esté a 150 m o menos y nunca persiste las coordenadas recibidas de Google. Usar `confirmFarLocation: true` para la salida de emergencia documentada en el ADR; queda auditada como `locationOverrideUsed`.
 
 ## Pago simulado
 
@@ -83,7 +83,7 @@ Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con
 
 ## Consola interna y web
 
-Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola pide el `ADMIN_API_TOKEN`, permite dar de alta locales, cambiar su estado, revalidarlos por 60 días, ejecutar la caducidad y generar el cartel con el QR del local.
+Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola pide el `ADMIN_API_TOKEN`, permite dar de alta locales buscando la dirección y marcando el pin en un mapa (Leaflet + OpenStreetMap), cambiar su estado, revalidarlos por 60 días, ejecutar la caducidad y generar el cartel con el QR del local.
 
 ## Conectar la app
 
