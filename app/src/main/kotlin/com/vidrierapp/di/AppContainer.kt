@@ -44,7 +44,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import com.vidrierapp.BuildConfig
 import com.vidrierapp.data.remote.api.DeviceIdInterceptor
+import com.vidrierapp.data.remote.api.AuthInterceptor
 import com.vidrierapp.data.remote.api.RemoteAccessSync
+import com.vidrierapp.data.repository.SessionRepository
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -93,8 +95,9 @@ class AppContainer(private val context: Context) {
                     addInterceptor(DeviceIdInterceptor { runBlocking { passRepository.installationId() } })
                 }
             }
+            .addInterceptor(AuthInterceptor { sessionRepository.token() })
             .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = HttpLoggingInterceptor.Level.BASIC
             })
             .build()
     }
@@ -109,6 +112,13 @@ class AppContainer(private val context: Context) {
 
     val apiService: VidrierAppApiService by lazy {
         retrofit.create(VidrierAppApiService::class.java)
+    }
+
+    val sessionRepository: SessionRepository by lazy {
+        SessionRepository(
+            context.applicationContext.getSharedPreferences("user_session", Context.MODE_PRIVATE),
+            apiService,
+        )
     }
 
     val database: VidrierAppDatabase by lazy {

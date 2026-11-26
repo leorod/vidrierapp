@@ -11,6 +11,8 @@ import com.vidrierapp.server.model.ReportRentedResponse
 import com.vidrierapp.server.model.ZoneSummaryResponse
 import com.vidrierapp.server.model.MockCheckoutResponse
 import com.vidrierapp.server.model.UnclassifiedCategoryResponse
+import com.vidrierapp.server.auth.AuthUser
+import com.vidrierapp.server.auth.UserRole
 import java.security.MessageDigest
 import java.sql.ResultSet
 import java.time.Instant
@@ -19,6 +21,15 @@ import java.util.UUID
 import javax.sql.DataSource
 
 open class VidrierAppRepository(private val dataSource: DataSource) {
+    open fun findAuthUser(username: String): AuthUser? = dataSource.connection.use { connection ->
+        connection.prepareStatement("SELECT username, password_hash, role FROM app_users WHERE username = ?").use { statement ->
+            statement.setString(1, username)
+            statement.executeQuery().use { results ->
+                if (results.next()) AuthUser(results.getString("username"), results.getString("password_hash"), UserRole.valueOf(results.getString("role"))) else null
+            }
+        }
+    }
+
     open fun shops(category: String?, bounds: Bounds?): List<ShopSummaryResponse> = dataSource.connection.use { connection ->
         val sql = buildString {
             append("SELECT s.id, s.address_text, s.status, ST_Y(s.location::geometry) latitude, ST_X(s.location::geometry) longitude, s.attributes, COALESCE(vs.vote_count, 0) vote_count, COALESCE(tc.label_es, vs.top_category) top_category FROM shops s LEFT JOIN mv_shop_vote_summary vs ON vs.shop_id = s.id LEFT JOIN categories tc ON tc.slug = vs.top_category WHERE s.status = 'AVAILABLE'")

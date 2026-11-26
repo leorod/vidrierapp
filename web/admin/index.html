@@ -7,9 +7,22 @@
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
+<main id="login-view" class="login-main">
+  <section class="card login-card" aria-labelledby="login-title">
+    <h1 id="login-title">Consola interna</h1>
+    <p>Ingresá con una cuenta de administrador para gestionar los locales.</p>
+    <form id="login-form">
+      <label>Usuario <input id="username" name="username" autocomplete="username" required></label>
+      <label>Contraseña <input id="password" name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Iniciar sesión</button>
+      <p id="login-out" class="hint" role="alert" aria-live="assertive"></p>
+    </form>
+  </section>
+</main>
+<div id="admin-view" hidden>
 <header class="bar">
   <h1>VidrierApp · Consola interna</h1>
-  <label class="token">Token admin <input id="token" type="password" autocomplete="off"></label>
+  <div class="session"><span id="session-user"></span><button type="button" id="logout" class="secondary">Cerrar sesión</button></div>
 </header>
 <main>
   <section class="card">
@@ -66,6 +79,7 @@
     </div>
   </section>
 </main>
+</div>
 <script src="qrcode.js"></script>
 <script src="admin.js"></script>
 </body>

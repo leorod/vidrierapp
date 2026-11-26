@@ -56,14 +56,15 @@ Para ejecutar la API sin Docker, desde la raíz del repositorio usar `./gradlew 
 | Método | Endpoint | Propósito |
 |---|---|---|
 | `GET` | `/health` | Health check sin base de datos. |
-| `GET` | `/api/v1/shops?category=&lonMin=&latMin=&lonMax=&latMax=` | Locales disponibles para mapa y filtro opcional. |
+| `POST` | `/api/v1/auth/login` | Inicia sesión con usuario/contraseña y devuelve un JWT con perfil `ADMIN` o `USER`. |
+| `GET` | `/api/v1/shops?category=&lonMin=&latMin=&lonMax=&latMax=` | Locales disponibles para mapa y filtro opcional; requiere JWT. |
 | `GET` | `/api/v1/shops/{id}` | Ficha del local. Enviar `X-Device-Id` para habilitar métricas con trial/pase vigente. |
 | `POST` | `/api/v1/votes` | Voto anónimo. Requiere `X-Fingerprint-Hash`; acepta `X-Browser-Token`. |
 | `POST` | `/api/v1/shops/{id}/report-rented` | Incrementa reportes y pasa a revisión al tercer reporte. |
 | `POST` | `/api/v1/auth/trial` | Inicia o consulta el trial único por dispositivo. |
 | `POST` | `/api/v1/payments/checkout` | Procesa un checkout simulado y activa el pase de 30 días solo si se aprueba. |
 | `GET` | `/api/v1/zones/summary` | Reportería histórica agregada por barrio, incluidos locales alquilados. |
-| `POST` | `/api/v1/admin/shops` | Alta de local; requiere `Authorization: Bearer $ADMIN_API_TOKEN`. |
+| `POST` | `/api/v1/admin/shops` | Alta de local; requiere JWT de perfil `ADMIN`. |
 | `POST` | `/api/v1/admin/geo/resolve` | Resuelve `placeId` vía Google y entrega un centro transitorio para el pin manual. |
 | `POST` | `/api/v1/admin/shops/{id}/status` | Actualiza estado/revalida un local; requiere token admin. |
 | `POST` | `/api/v1/admin/maintenance/run` | Fuerza caducidad a 60 días y refresca agregados; requiere token admin. |
@@ -83,7 +84,15 @@ Para el alta administrativa, primero llamar `POST /api/v1/admin/geo/resolve` con
 
 ## Consola interna y web
 
-Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola pide el `ADMIN_API_TOKEN`, permite dar de alta locales, cambiar su estado, revalidarlos por 60 días, ejecutar la caducidad y generar el cartel con el QR del local.
+Con `WEB_DIR` apuntando a la carpeta `web/` (el compose ya lo monta), el servidor entrega la página de voto en `/?localId=<id>` y la consola interna en `/admin/`. La consola inicia sesión contra el mismo backend que Android y solo permite continuar a perfiles `ADMIN`; el JWT se conserva durante la pestaña actual. Configurar `JWT_SECRET` en `.env` antes de desplegar.
+
+Las cuentas se guardan en `app_users` y las contraseñas se almacenan como hashes PBKDF2-SHA256. Tras ejecutar las migraciones, cargar las cuentas dummy de desarrollo con:
+
+```bash
+./scripts/seed_dummy_users.sh
+```
+
+El script es idempotente y crea estas cuentas: `admin` / `Admin123!` (perfil `ADMIN`), `usuario1` / `User123!` y `usuario2` / `User123!` (perfiles `USER`). No usar estas credenciales fuera de desarrollo.
 
 ## Conectar la app
 
