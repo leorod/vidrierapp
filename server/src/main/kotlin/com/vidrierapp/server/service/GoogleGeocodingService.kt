@@ -21,11 +21,9 @@ class GoogleGeocodingService(private val apiKey: String) {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
     private val resolutions = ConcurrentHashMap<String, ResolvedLocation>()
 
-    fun resolve(placeId: String): GeoResolveResponse {
+    fun resolve(placeId: String?, address: String? = null): GeoResolveResponse {
         require(apiKey.isNotBlank()) { "MAPS_API_KEY is not configured" }
-        require(placeId.isNotBlank()) { "placeId is required" }
-        val encodedPlaceId = URLEncoder.encode(placeId, StandardCharsets.UTF_8)
-        val request = HttpRequest.newBuilder(URI("https://maps.googleapis.com/maps/api/geocode/json?place_id=$encodedPlaceId&key=$apiKey"))
+        val request = HttpRequest.newBuilder(geocodeUri(placeId, address))
             .timeout(Duration.ofSeconds(10))
             .GET()
             .build()
@@ -33,14 +31,27 @@ class GoogleGeocodingService(private val apiKey: String) {
         require(response.statusCode() == 200) { "Google Geocoding request failed" }
         val payload = Json.parseToJsonElement(response.body()).jsonObject
         require(payload["status"]?.toString()?.trim('"') == "OK") { "Google could not resolve the selected place" }
-        val location = payload["results"]?.jsonArray?.firstOrNull()?.jsonObject?.get("geometry")?.jsonObject?.get("location")?.jsonObject
+        val result = payload["results"]?.jsonArray?.firstOrNull()?.jsonObject
+        val location = result?.get("geometry")?.jsonObject?.get("location")?.jsonObject
             ?: throw IllegalArgumentException("Google Geocoding returned no location")
         val latitude = location["lat"]?.toString()?.toDoubleOrNull() ?: throw IllegalArgumentException("Google Geocoding returned an invalid latitude")
         val longitude = location["lng"]?.toString()?.toDoubleOrNull() ?: throw IllegalArgumentException("Google Geocoding returned an invalid longitude")
         val resolutionId = UUID.randomUUID().toString()
         resolutions[resolutionId] = ResolvedLocation(latitude, longitude, Instant.now().plusSeconds(15 * 60))
-        return GeoResolveResponse(resolutionId, latitude, longitude)
+        val formattedAddress = result["formatted_address"]?.toString()?.trim('"').orEmpty()
+        return GeoResolveResponse(resolutionId, latitude, longitude, formattedAddress = formattedAddress)
     }
+
+    internal fun geocodeUri(placeId: String?, address: String?): URI {
+        val query = when {
+            !placeId.isNullOrBlank() -> "place_id=${encode(placeId.trim())}"
+            !address.isNullOrBlank() -> "address=${encode(address.trim())}&components=country:AR&region=ar"
+            else -> throw IllegalArgumentException("placeId or address is required")
+        }
+        return URI("https://maps.googleapis.com/maps/api/geocode/json?$query&language=es&key=$apiKey")
+    }
+
+    private fun encode(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
     fun validate(resolutionId: String?, latitude: Double, longitude: Double, confirmFarLocation: Boolean): Boolean {
         val resolved = resolutionId?.let(resolutions::remove) ?: return confirmFarLocation

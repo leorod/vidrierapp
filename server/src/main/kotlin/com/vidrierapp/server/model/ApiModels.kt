@@ -123,10 +123,10 @@ data class CreateShopRequest(
 )
 
 @Serializable
-data class GeoResolveRequest(val placeId: String)
+data class GeoResolveRequest(val placeId: String? = null, val address: String? = null)
 
 @Serializable
-data class GeoResolveResponse(val resolutionId: String, val latitude: Double, val longitude: Double, val radiusMeters: Int = 150)
+data class GeoResolveResponse(val resolutionId: String, val latitude: Double, val longitude: Double, val radiusMeters: Int = 150, val formattedAddress: String = "")
 
 @Serializable
 data class AddCategoryAliasRequest(val alias: String, val canonicalSlug: String)

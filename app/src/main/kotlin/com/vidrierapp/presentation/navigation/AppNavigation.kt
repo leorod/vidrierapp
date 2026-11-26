@@ -130,7 +130,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     )
                 }
                 entry<ProfileDestination> {
-                    ProfileScreen(username = session.username, onLogout = authViewModel::logout)
+                    ProfileScreen(username = session?.username.orEmpty(), onLogout = authViewModel::logout)
                 }
                 entry<ShopDetailDestination> { destination ->
                     ShopDetailScreen(

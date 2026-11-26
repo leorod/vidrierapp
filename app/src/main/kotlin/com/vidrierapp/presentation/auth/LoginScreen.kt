@@ -18,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.vidrierapp.R
@@ -26,6 +28,7 @@ import com.vidrierapp.R
 fun LoginScreen(loginState: LoginUiState, onLogin: (String, String) -> Unit) {
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    val loadingDescription = stringResource(R.string.login_loading)
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center,
@@ -57,7 +60,7 @@ fun LoginScreen(loginState: LoginUiState, onLogin: (String, String) -> Unit) {
             enabled = !loginState.isLoading,
         ) {
             if (loginState.isLoading) {
-                CircularProgressIndicator(contentDescription = stringResource(R.string.login_loading))
+                CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = loadingDescription })
             } else {
                 Text(stringResource(R.string.login_submit))
             }
